@@ -25,8 +25,20 @@ defmodule SetmyInfo.RuntimeEngine.Worker do
   @spec execute(atom(), atom(), [term()]) :: {:ok, term()} | {:error, term()}
   def execute(module_name, function, args) do
     case Registry.lookup(SetmyInfo.RuntimeEngine.Registry, module_name) do
-      [{pid, _}] -> GenServer.call(pid, {:execute, function, args})
-      [] -> {:error, :not_loaded}
+      [{pid, _}] ->
+        # Registry removes entries asynchronously after process death, so there
+        # is a brief window where a PID is returned for an already-dead process.
+        # Catch the resulting :noproc exit and normalise it to {:error, :not_loaded}.
+        try do
+          GenServer.call(pid, {:execute, function, args})
+        catch
+          :exit, {:noproc, _} -> {:error, :not_loaded}
+          :exit, {:normal, _} -> {:error, :not_loaded}
+          :exit, {:shutdown, _} -> {:error, :not_loaded}
+        end
+
+      [] ->
+        {:error, :not_loaded}
     end
   end
 

@@ -44,17 +44,25 @@ defmodule SetmyInfo.RuntimeEngine.HotCode do
   """
   @spec load_from_source(String.t()) :: {:ok, [{module(), binary()}]} | {:error, term()}
   def load_from_source(elixir_source) when is_binary(elixir_source) do
-    modules = Code.compile_string(elixir_source)
+    # Hot reload by definition replaces an existing module — suppress the
+    # "redefining module" compiler warning that would otherwise appear on every swap.
+    Code.put_compiler_option(:ignore_module_conflict, true)
 
-    Logger.info(
-      "[HotCode] loaded #{length(modules)} module(s) from source: #{module_names(modules)}"
-    )
+    try do
+      modules = Code.compile_string(elixir_source)
 
-    {:ok, modules}
-  rescue
-    e ->
-      Logger.warning("[HotCode] compile error: #{Exception.message(e)}")
-      {:error, e}
+      Logger.info(
+        "[HotCode] loaded #{length(modules)} module(s) from source: #{module_names(modules)}"
+      )
+
+      {:ok, modules}
+    rescue
+      e ->
+        Logger.warning("[HotCode] compile error: #{Exception.message(e)}")
+        {:error, e}
+    after
+      Code.put_compiler_option(:ignore_module_conflict, false)
+    end
   end
 
   @doc """
