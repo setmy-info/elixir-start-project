@@ -1,0 +1,4 @@
+
+[
+  subdirectories: ["apps/*"]
+]
