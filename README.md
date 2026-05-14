@@ -18,6 +18,7 @@ convention but in Elixir's `CamelCase` module form.
 | Format code | `mix format` |
 | Unit tests only | `mix test.unit` |
 | Integration tests only | `mix test.integration` |
+| E2E tests only | `mix test.e2e` |
 | All tests | `mix test.all` |
 | Start GraphQL API server | `mix run --no-halt` |
 | Build CLI escript | `cd apps/cli && mix escript.build` |
@@ -65,10 +66,9 @@ elixir-start-project/               ← umbrella root
 
 ```
 core_logic  ←── runtime_engine ←── graphql_api
-                      ↑
-                     cli
+                      ↑                  ↑
+                     cli        integration_tests
                      wasm
-                integration_tests
 ```
 
 ---
@@ -123,8 +123,8 @@ mix format
 
 ## Running tests
 
-The `test.unit`, `test.integration`, and `test.all` aliases automatically run
-under `MIX_ENV=test` via `preferred_envs` in `mix.exs` — no prefix needed.
+The `test.unit`, `test.integration`, `test.e2e`, and `test.all` aliases automatically
+run under `MIX_ENV=test` via `preferred_envs` in `mix.exs` — no prefix needed.
 
 ### Unit tests (all apps except integration_tests)
 
@@ -141,7 +141,23 @@ mix test.integration
 The integration tests start the full OTP supervision tree and exercise the real
 load → execute → release lifecycle against live processes — no mocks.
 
-### All tests (unit + integration)
+### E2E tests only
+
+```sh
+mix test.e2e
+```
+
+E2E tests follow the same lifecycle as Maven's pre-integration-test / integration-test /
+post-integration-test phases:
+
+1. **Pre** — `setup_all` starts a real Cowboy HTTP server on port 4003.
+2. **Test** — tests send HTTP POST requests to `/graphql` using Erlang's built-in `:httpc`.
+3. **Post** — `on_exit` shuts the server down after the suite finishes.
+
+This verifies the full stack: HTTP → Plug router → Absinthe schema → RuntimeEngine →
+Math module.
+
+### All tests (unit + integration + e2e)
 
 ```sh
 mix test.all

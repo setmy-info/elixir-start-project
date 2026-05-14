@@ -16,6 +16,7 @@ defmodule ElixirStartProject.MixProject do
       preferred_envs: [
         "test.unit": :test,
         "test.integration": :test,
+        "test.e2e": :test,
         "test.all": :test,
         validate: :test
       ]
@@ -50,9 +51,12 @@ defmodule ElixirStartProject.MixProject do
       "test.unit": ["test #{Enum.join(@unit_test_paths, " ")}"],
 
       # Integration tests only
-      "test.integration": ["test apps/integration_tests/test"],
+      "test.integration": ["test apps/integration_tests/test/integration"],
 
-      # All tests (unit + integration)
+      # E2E tests only (server starts before suite, stops after)
+      "test.e2e": ["test apps/integration_tests/test/e2e"],
+
+      # All tests (unit + integration + e2e)
       "test.all": ["test"]
     ]
   end

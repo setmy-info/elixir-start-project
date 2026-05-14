@@ -47,7 +47,6 @@ jobs:
             ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-
 
       - name: Install dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: mix deps.get
 
       - name: Compile (warnings as errors)
@@ -57,8 +56,10 @@ jobs:
         run: mix format --check-formatted
 
       - name: Run unit tests
-        run: mix test
+        run: mix test.unit
 
       - name: Run integration tests
-        run: mix test
-        working-directory: apps/integration_tests
+        run: mix test.integration
+
+      - name: Run e2e tests
+        run: mix test.e2e

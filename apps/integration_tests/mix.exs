@@ -25,7 +25,8 @@ defmodule SetmyInfo.IntegrationTests.MixProject do
   defp deps do
     [
       {:core_logic, in_umbrella: true},
-      {:runtime_engine, in_umbrella: true}
+      {:runtime_engine, in_umbrella: true},
+      {:graphql_api, in_umbrella: true}
     ]
   end
 end
