@@ -19,6 +19,7 @@ convention but in Elixir's `CamelCase` module form.
 | Unit tests only | `mix test.unit` |
 | Integration tests only | `mix test.integration` |
 | E2E tests only | `mix test.e2e` |
+| Gherkin BDD e2e tests only | `mix test.gherkin` |
 | All tests | `mix test.all` |
 | Start GraphQL API server | `mix run --no-halt` |
 | Build CLI escript | `cd apps/cli && mix escript.build` |
@@ -59,6 +60,7 @@ elixir-start-project/               ← umbrella root
 │   ├── wasm/                       SetmyInfo.Wasm.* (stub)
 │   └── integration_tests/          SetmyInfo.IntegrationTests.*
 ├── config/                         Shared config per Mix env
+├── features/                       Gherkin .feature files + White Bread config
 └── .github/workflows/ci.yml        GitHub Actions CI
 ```
 
@@ -123,8 +125,8 @@ mix format
 
 ## Running tests
 
-The `test.unit`, `test.integration`, `test.e2e`, and `test.all` aliases automatically
-run under `MIX_ENV=test` via `preferred_envs` in `mix.exs` — no prefix needed.
+The `test.unit`, `test.integration`, `test.e2e`, `test.gherkin`, and `test.all` aliases
+automatically run under `MIX_ENV=test` via `preferred_envs` in `mix.exs` — no prefix needed.
 
 ### Unit tests (all apps except integration_tests)
 
@@ -157,7 +159,22 @@ post-integration-test phases:
 This verifies the full stack: HTTP → Plug router → Absinthe schema → RuntimeEngine →
 Math module.
 
-### All tests (unit + integration + e2e)
+### Gherkin BDD e2e tests only
+
+```sh
+mix test.gherkin
+```
+
+BDD scenarios are written in Gherkin (`.feature` files under `features/`) and executed
+via [White Bread](https://github.com/meadsteve/white-bread). The server lifecycle
+(start/stop) is managed by an ExUnit `setup_all`/`on_exit` wrapper in
+`apps/integration_tests/test/e2e/graphql_gherkin_test.exs` — the Gherkin context
+(`GraphqlApiContext`) contains only pure step definitions, no server management.
+
+The Gherkin test runs on port 4004 (separate from the plain ExUnit e2e port 4003) so
+both suites can coexist in `mix test.all`.
+
+### All tests (unit + integration + e2e + Gherkin)
 
 ```sh
 mix test.all

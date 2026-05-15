@@ -63,3 +63,6 @@ jobs:
 
       - name: Run e2e tests
         run: mix test.e2e
+
+      - name: Run Gherkin e2e tests
+        run: mix test.gherkin

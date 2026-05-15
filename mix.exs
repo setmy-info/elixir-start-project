@@ -17,6 +17,7 @@ defmodule ElixirStartProject.MixProject do
         "test.unit": :test,
         "test.integration": :test,
         "test.e2e": :test,
+        "test.gherkin": :test,
         "test.all": :test,
         validate: :test
       ]
@@ -56,7 +57,12 @@ defmodule ElixirStartProject.MixProject do
       # E2E tests only (server starts before suite, stops after)
       "test.e2e": ["test apps/integration_tests/test/e2e"],
 
-      # All tests (unit + integration + e2e)
+      # Gherkin BDD e2e tests — run as an ExUnit test so the same
+      # setup_all/on_exit server lifecycle used by the plain e2e tests
+      # manages the server; the Gherkin context contains no lifecycle code.
+      "test.gherkin": ["test apps/integration_tests/test/e2e/graphql_gherkin_test.exs"],
+
+      # All tests: unit + integration + e2e (ExUnit, includes Gherkin wrapper)
       "test.all": ["test"]
     ]
   end

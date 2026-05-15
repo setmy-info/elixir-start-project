@@ -26,7 +26,9 @@ defmodule SetmyInfo.IntegrationTests.MixProject do
     [
       {:core_logic, in_umbrella: true},
       {:runtime_engine, in_umbrella: true},
-      {:graphql_api, in_umbrella: true}
+      {:graphql_api, in_umbrella: true},
+      {:white_bread, "4.4.0", only: [:test]},
+      {:gherkin, "1.6.0", only: [:test], override: true}
     ]
   end
 end
