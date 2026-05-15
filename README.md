@@ -21,6 +21,12 @@ convention but in Elixir's `CamelCase` module form.
 | E2E tests only | `mix test.e2e` |
 | Gherkin BDD e2e tests only | `mix test.gherkin` |
 | All tests | `mix test.all` |
+| **Mutation testing** | `mix test.mutation` |
+| **Unit-test coverage (HTML)** | `mix test.coverage` |
+| **Generate API docs** | `mix docs` |
+| **Dependency vulnerability audit** | `mix audit` |
+| **Static security analysis** | `mix security` |
+| **Full report suite** | `mix report` |
 | Start GraphQL API server | `mix run --no-halt` |
 | Build CLI escript | `cd apps/cli && mix escript.build` |
 
@@ -58,9 +64,12 @@ elixir-start-project/               ← umbrella root
 │   ├── graphql_api/                SetmyInfo.GraphqlApi.*
 │   ├── cli/                        SetmyInfo.Cli.*
 │   ├── wasm/                       SetmyInfo.Wasm.* (stub)
+│   ├── lessons/                    SetmyInfo.Lessons.* ← Elixir learning examples
 │   └── integration_tests/          SetmyInfo.IntegrationTests.*
 ├── config/                         Shared config per Mix env
 ├── features/                       Gherkin .feature files + White Bread config
+├── .muzak.exs                      Mutation testing configuration
+├── .sobelow-conf                   Static security analysis configuration
 └── .github/workflows/ci.yml        GitHub Actions CI
 ```
 
@@ -71,6 +80,7 @@ core_logic  ←── runtime_engine ←── graphql_api
                       ↑                  ↑
                      cli        integration_tests
                      wasm
+lessons (standalone — no production deps)
 ```
 
 ---
@@ -128,7 +138,7 @@ mix format
 The `test.unit`, `test.integration`, `test.e2e`, `test.gherkin`, and `test.all` aliases
 automatically run under `MIX_ENV=test` via `preferred_envs` in `mix.exs` — no prefix needed.
 
-### Unit tests (all apps except integration_tests)
+### Unit tests (all apps including lessons)
 
 ```sh
 mix test.unit
@@ -188,6 +198,150 @@ mix test
 cd apps/runtime_engine && mix test
 cd apps/integration_tests && mix test
 ```
+
+---
+
+## Lessons app
+
+`apps/lessons/` is a standalone learning module containing executable Elixir examples
+structured as ExUnit tests. The test runner is the execution environment — each test
+prints output to stdout **and** asserts the expected value.
+
+```sh
+# Run all lessons
+mix test apps/lessons/test
+
+# Run a specific lesson
+mix test apps/lessons/test/lessons/data_types_test.exs
+```
+
+### Lessons covered
+
+| File | Topics |
+|---|---|
+| `data_types_test.exs` | Booleans, integers (binary/octal/hex), floats, atoms, strings, nil, charlists |
+| `data_structures_test.exs` | Tuples, lists, maps, keyword lists, **structs (data class replacement)**, Date/DateTime |
+| `flow_control_test.exs` | `if/else`, `unless`, `cond` (if-elsif-else), `case`, `with`, `for` (comprehension), tail recursion (while substitute) |
+| `operators_test.exs` | Arithmetic `+−×÷`, comparison `==`/`===`, logical `and/or/&&/\|\|`, `<>`, `++/--`, pattern match `=`, pipe `\|>` |
+| `bitwise_ops_test.exs` | Bitwise `&&&/\|\|\|/^^^/~~~`, shifts `<<</>>>`, flag operations, RGB packing, IPv4 binary parsing, XOR cipher, popcount |
+| `functions_test.exs` | Named functions, multi-clause dispatch, defaults, anonymous functions, higher-order, closures, captures, recursion |
+| `algorithms_test.exs` | Fibonacci (naive/tail-recursive/stream), factorial, sum/max/min, binary search, flatten, reverse, palindrome, GCD/LCM, prime |
+| `collections_test.exs` | `Enum.map/filter/reduce/any?/all?/sort/zip/group_by`, `Map.*`, lazy `Stream` |
+
+---
+
+## YAML parsing (Task 7)
+
+YAML support is provided by `SetmyInfo.CoreLogic.YamlParser`, a thin wrapper around
+[yaml_elixir](https://hex.pm/packages/yaml_elixir) (backed by the Erlang `yamerl` NIF).
+
+```elixir
+alias SetmyInfo.CoreLogic.YamlParser
+
+# Parse a YAML string
+{:ok, config} = YamlParser.parse("host: localhost\nport: 4000\n")
+
+# Parse a YAML file
+{:ok, data} = YamlParser.parse_file("/path/to/config.yml")
+
+# Multi-document YAML (--- separator)
+{:ok, [doc1, doc2, doc3]} = YamlParser.parse_all(multi_doc_string)
+```
+
+### YAML → Elixir type mapping
+
+| YAML | Elixir |
+|---|---|
+| `string` / bare word | `String.t()` |
+| `42` / `-17` | `integer()` |
+| `3.14` / `1.5e3` | `float()` |
+| `true` / `false` | `boolean()` |
+| `~` / `null` | `nil` |
+| `- item` sequence | `list()` |
+| `key: value` mapping | `map()` (string keys) |
+| `\|` literal block | multi-line string with `\n` |
+| `>` folded block | single-line string |
+| `&anchor` / `*alias` | shared Elixir value |
+
+### Fixture files
+
+YAML fixture files live in `apps/integration_tests/test/fixtures/yaml/`:
+
+| File | Demonstrates |
+|---|---|
+| `config.yml` | Application config with nested maps and feature flags |
+| `persons.yml` | List of person records → Ecto changeset hydration |
+| `types.yml` | All YAML types, multi-line strings, anchors/aliases |
+| `multi_doc.yml` | Multi-document YAML with `---` separators |
+
+### Integration tests
+
+```sh
+mix test.integration
+# or directly:
+mix test apps/integration_tests/test/integration/yaml_parsing_test.exs
+```
+
+---
+
+## Mutation testing (Task 2)
+
+Mutation testing modifies source code (flips operators, removes branches, changes values)
+and re-runs unit tests to verify each mutation is "killed" (tests fail). A surviving
+mutation reveals a gap in test coverage — the equivalent of PITEST / PIT for Maven.
+
+**Tool:** [muzak](https://hex.pm/packages/muzak)
+
+```sh
+# Run mutation tests against production source files (unit tests only)
+mix test.mutation
+```
+
+Configuration in `.muzak.exs` limits mutations to production code in `apps/*/lib/`
+(not lessons or integration tests), mirroring Maven's `src/main/java` convention.
+
+---
+
+## Documentation generation (Task 3)
+
+Elixir uses [ExDoc](https://hexdocs.pm/ex_doc/) — the equivalent of Javadoc.
+Documentation is written in Markdown inside `@moduledoc` / `@doc` attributes and
+includes `iex>` doctests.
+
+```sh
+# Generate HTML docs — output in doc/
+mix docs
+
+# View docs
+open doc/index.html
+```
+
+All lesson modules include full `@moduledoc` and `@doc` coverage. The umbrella-wide
+docs include a README entry point and per-app module groupings.
+
+---
+
+## Unit-test coverage (Task 4)
+
+Coverage is measured with [ExCoveralls](https://github.com/parroty/excoveralls) — the
+Elixir equivalent of JaCoCo.
+
+```sh
+# HTML coverage report — output in cover/
+mix test.coverage
+
+# View report
+open cover/excoveralls.html
+
+# Summary only (terminal)
+mix coveralls
+
+# With per-line detail
+mix coveralls.detail
+```
+
+Coverage is measured for all unit-tested apps (`core_logic`, `runtime_engine`,
+`graphql_api`, `cli`, `wasm`, `lessons`).
 
 ---
 
@@ -255,6 +409,61 @@ iex> SetmyInfo.RuntimeEngine.Executor.run_and_release(:math_module, :add, [2, 3]
 iex> SetmyInfo.RuntimeEngine.Loader.list_loaded()
 []
 ```
+
+---
+
+## Security and dependency analysis (Task 6)
+
+These tools are the Elixir equivalents of Maven's OWASP DependencyCheck and
+FindSecBugs/SpotBugs.
+
+### Dependency vulnerability audit
+
+[mix_audit](https://github.com/mirego/mix_audit) checks all Hex dependencies against
+the [Elixir security advisories database](https://github.com/dependabot/elixir-security-advisories).
+
+```sh
+# Check for known CVEs in dependencies
+mix audit
+# or directly:
+mix deps.audit
+```
+
+### Static security analysis
+
+[Sobelow](https://github.com/nccgroup/sobelow) performs static analysis of Elixir/Plug
+code for common web vulnerabilities (XSS, SQL injection, directory traversal, etc.).
+
+```sh
+# Run security analysis
+mix security
+# or directly:
+mix sobelow --config
+```
+
+Configuration is in `.sobelow-conf`.
+
+### Full report suite (Maven Site equivalent)
+
+Elixir has no single `mvn site` equivalent, but the `mix report` alias generates all
+reports in sequence:
+
+```sh
+# Generates:
+#   doc/            — ExDoc HTML documentation
+#   cover/          — ExCoveralls HTML coverage report
+#   stdout          — dependency audit results
+mix report
+```
+
+| Maven | Elixir |
+|---|---|
+| Javadoc | `mix docs` → `doc/` |
+| JaCoCo HTML | `mix test.coverage` → `cover/` |
+| OWASP DependencyCheck | `mix audit` |
+| SpotBugs / FindSecBugs | `mix security` |
+| PITEST mutation testing | `mix test.mutation` |
+| Maven Site | `mix report` (docs + coverage + audit) |
 
 ---
 

@@ -1,0 +1,9 @@
+[
+  verbose: false,
+  quiet: false,
+  exit_on_vuln: false,
+  skip: false,
+  router: "apps/graphql_api/lib/graphql_api/router.ex",
+  ignore: [],
+  ignore_files: []
+]

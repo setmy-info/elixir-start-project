@@ -1,0 +1,26 @@
+persons:
+  - first_name: Alice
+    last_name: Smith
+    age: 30
+    active: true
+    email: alice@example.com
+    roles:
+      - admin
+      - developer
+
+  - first_name: Bob
+    last_name: Jones
+    age: 25
+    active: false
+    email: bob@example.com
+    roles:
+      - developer
+
+  - first_name: Carol
+    last_name: White
+    age: 35
+    active: true
+    email: carol@example.com
+    roles:
+      - manager
+      - developer

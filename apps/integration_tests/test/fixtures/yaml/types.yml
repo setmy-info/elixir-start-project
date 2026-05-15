@@ -1,0 +1,60 @@
+# YAML type demonstration
+string_value: "Hello, YAML!"
+bare_string: just a string
+integer_value: 42
+negative_integer: -17
+float_value: 3.14
+scientific: 1.5e3
+boolean_true: true
+boolean_false: false
+null_tilde: ~
+null_explicit: null
+
+# Nested map
+address:
+  street: "123 Main St"
+  city: Tallinn
+  country: Estonia
+  zip: "10111"
+
+# Simple list
+colors:
+  - red
+  - green
+  - blue
+
+# List of maps
+products:
+  - name: Widget A
+    price: 9.99
+    in_stock: true
+  - name: Widget B
+    price: 19.99
+    in_stock: false
+
+# Multi-line literal block (preserves newlines)
+description: |
+  This is a multi-line
+  string that preserves
+  line breaks exactly.
+
+# Multi-line folded block (collapses newlines to spaces)
+summary: >
+  This is a folded string
+  that joins lines with
+  a single space.
+
+# Anchors and aliases — YAML's built-in DRY mechanism.
+# *alias references the full value bound by &anchor.
+connection_defaults: &conn_defaults
+  timeout: 30
+  retries: 3
+  pool_size: 5
+
+production:
+  host: prod.example.com
+  connection: *conn_defaults
+
+staging:
+  host: staging.example.com
+  connection: *conn_defaults
