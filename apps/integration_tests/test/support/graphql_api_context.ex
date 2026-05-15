@@ -4,31 +4,36 @@ defmodule GraphqlApiContext do
   @port 4004
   @url ~c"http://localhost:#{@port}/graphql"
 
-  given_ ~r/^the GraphQL server is running$/, fn state ->
+  given_(~r/^the GraphQL server is running$/, fn state ->
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I call add with a=(?<a>-?\d+) and b=(?<b>-?\d+)$/, fn state, %{a: a, b: b} ->
+  when_(~r/^I call add with a=(?<a>-?\d+) and b=(?<b>-?\d+)$/, fn state, %{a: a, b: b} ->
     {:ok, Map.put(state, :last_response, send_query("{ add(a: #{a}, b: #{b}) }"))}
-  end
+  end)
 
-  when_ ~r/^I call multiply with a=(?<a>-?\d+) and b=(?<b>-?\d+)$/, fn state, %{a: a, b: b} ->
+  when_(~r/^I call multiply with a=(?<a>-?\d+) and b=(?<b>-?\d+)$/, fn state, %{a: a, b: b} ->
     {:ok, Map.put(state, :last_response, send_query("{ multiply(a: #{a}, b: #{b}) }"))}
-  end
+  end)
 
-  then_ ~r/^the response should have add equal to (?<expected>-?\d+)$/, fn state, %{expected: expected} ->
+  then_(~r/^the response should have add equal to (?<expected>-?\d+)$/, fn state,
+                                                                           %{expected: expected} ->
     {200, body} = state.last_response
     expected_int = String.to_integer(expected)
     %{"data" => %{"add" => ^expected_int}} = body
     {:ok, state}
-  end
+  end)
 
-  then_ ~r/^the response should have multiply equal to (?<expected>-?\d+)$/, fn state, %{expected: expected} ->
+  then_(~r/^the response should have multiply equal to (?<expected>-?\d+)$/, fn state,
+                                                                                %{
+                                                                                  expected:
+                                                                                    expected
+                                                                                } ->
     {200, body} = state.last_response
     expected_int = String.to_integer(expected)
     %{"data" => %{"multiply" => ^expected_int}} = body
     {:ok, state}
-  end
+  end)
 
   defp send_query(query) do
     body = Jason.encode!(%{query: query})
