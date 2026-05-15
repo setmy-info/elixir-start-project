@@ -309,11 +309,11 @@ Documentation is written in Markdown inside `@moduledoc` / `@doc` attributes and
 includes `iex>` doctests.
 
 ```sh
-# Generate HTML docs — output in doc/
+# Generate HTML docs — output in _build/doc/
 mix docs
 
 # View docs
-open doc/index.html
+open _build/doc/index.html
 ```
 
 All lesson modules include full `@moduledoc` and `@doc` coverage. The umbrella-wide
@@ -327,11 +327,11 @@ Coverage is measured with [ExCoveralls](https://github.com/parroty/excoveralls) 
 Elixir equivalent of JaCoCo.
 
 ```sh
-# HTML coverage report — output in cover/
+# HTML coverage report — output in _build/cover/<app>/
 mix test.coverage
 
-# View report
-open cover/excoveralls.html
+# View report (one per app)
+open _build/cover/core_logic/excoveralls.html
 
 # Summary only (terminal)
 mix coveralls
@@ -450,16 +450,16 @@ reports in sequence:
 
 ```sh
 # Generates:
-#   doc/            — ExDoc HTML documentation
-#   cover/          — ExCoveralls HTML coverage report
-#   stdout          — dependency audit results
+#   _build/doc/           — ExDoc HTML documentation
+#   _build/cover/<app>/   — ExCoveralls HTML coverage report per app
+#   stdout                — dependency audit results
 mix report
 ```
 
 | Maven | Elixir |
 |---|---|
-| Javadoc | `mix docs` → `doc/` |
-| JaCoCo HTML | `mix test.coverage` → `cover/` |
+| Javadoc | `mix docs` → `_build/doc/` |
+| JaCoCo HTML | `mix test.coverage` → `_build/cover/<app>/` |
 | OWASP DependencyCheck | `mix audit` |
 | SpotBugs / FindSecBugs | `mix security` |
 | PITEST mutation testing | `mix test.mutation` |

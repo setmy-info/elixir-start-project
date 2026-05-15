@@ -1,9 +1,10 @@
-# Build artefacts
+# Build artefacts — _build/ holds compiled code, docs, and reports
 /_build
-/cover
 /deps
-/doc
 /.fetch
+
+# Per-app coverage dirs (written by excoveralls; collected into _build/cover/ by mix test.coverage)
+apps/*/cover
 
 # Erlang crash dumps
 erl_crash.dump

@@ -4,17 +4,19 @@ defmodule ElixirStartProject.MixProject do
   def project do
     [
       apps_path: "apps",
+      name: "Elixir Start Project",
       version: "0.1.0",
       start_permanent: Mix.env() == :live,
       deps: deps(),
       aliases: aliases(),
       # Task 4: unit-test coverage via ExCoveralls
       test_coverage: [tool: ExCoveralls],
-      # Task 3: ExDoc umbrella documentation
+      # Task 3: ExDoc umbrella documentation — output inside _build/ (gitignored)
       docs: [
         main: "readme",
         extras: ["README.md"],
-        groups_for_extras: [Guides: ["README.md"]]
+        groups_for_extras: [Guides: ["README.md"]],
+        output: "_build/doc"
       ]
     ]
   end
@@ -99,9 +101,9 @@ defmodule ElixirStartProject.MixProject do
       # Runs muzak which mutates source code and re-runs tests to find untested paths.
       "test.mutation": ["muzak"],
 
-      # Task 4: Coverage report for unit tests — HTML output in cover/
+      # Task 4: Coverage report for unit tests — HTML output in _build/cover/<app>/
       # Equivalent of Maven Surefire/JaCoCo HTML report
-      "test.coverage": ["coveralls.html #{Enum.join(@unit_test_paths, " ")}"],
+      "test.coverage": ["test.coverage"],
 
       # Task 6: Dependency vulnerability audit (equiv. OWASP DependencyCheck)
       audit: ["deps.audit"],
@@ -111,7 +113,7 @@ defmodule ElixirStartProject.MixProject do
 
       # Task 6: Full report suite — docs + coverage + audit + security
       # Run this to generate the Elixir equivalent of a Maven site
-      report: ["docs", "coveralls.html #{Enum.join(@unit_test_paths, " ")}", "deps.audit"]
+      report: ["docs", "test.coverage", "deps.audit"]
     ]
   end
 end
