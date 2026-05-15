@@ -25,7 +25,8 @@ defmodule SetmyInfo.CoreLogic.MixProject do
   defp deps do
     [
       {:ecto_sql, "~> 3.12"},
-      {:postgrex, "~> 0.19"}
+      {:postgrex, "~> 0.19"},
+      {:ecto_sqlite3, "~> 0.17"}
     ]
   end
 end

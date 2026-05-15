@@ -21,3 +21,6 @@ config :logger, :console,
 #   hostname: "localhost",
 #   database: "elixir_start_ci",
 #   pool: Ecto.Adapters.SQL.Sandbox
+
+config :core_logic, SetmyInfo.CoreLogic.Repo,
+  database: "/tmp/elixir_start_ci.db"

@@ -2,17 +2,25 @@ defmodule SetmyInfo.GraphqlApi.Schema do
   @moduledoc """
   Absinthe GraphQL schema.
 
-  Exposes:
-    query { add(a: Int!, b: Int!): Int }
+  Queries:
+    { add(a: Int!, b: Int!): Int }
+    { multiply(a: Int!, b: Int!): Int }
+    { persons: [Person] }
 
-  Example query:
-    { add(a: 2, b: 3) }   # => { "data": { "add": 5 } }
+  Mutations:
+    mutation { createPerson(firstName: String!, lastName: String!): Person }
   """
 
   use Absinthe.Schema
 
+  object :person do
+    field(:id, :id)
+    field(:first_name, :string)
+    field(:last_name, :string)
+  end
+
   query do
-    @desc "Adds two integers. Delegates to SetmyInfo.RuntimeEngine for execution."
+    @desc "Adds two integers."
     field :add, :integer do
       arg(:a, non_null(:integer))
       arg(:b, non_null(:integer))
@@ -29,6 +37,28 @@ defmodule SetmyInfo.GraphqlApi.Schema do
 
       resolve(fn %{a: a, b: b}, _ ->
         SetmyInfo.RuntimeEngine.Executor.run_and_release(:math_module, :multiply, [a, b])
+      end)
+    end
+
+    @desc "Returns all persons stored in the database."
+    field :persons, list_of(:person) do
+      resolve(fn _, _ ->
+        {:ok, SetmyInfo.CoreLogic.Persons.list_persons()}
+      end)
+    end
+  end
+
+  mutation do
+    @desc "Inserts a new person and returns the saved record."
+    field :create_person, :person do
+      arg(:first_name, non_null(:string))
+      arg(:last_name, non_null(:string))
+
+      resolve(fn %{first_name: first_name, last_name: last_name}, _ ->
+        SetmyInfo.CoreLogic.Persons.create_person(%{
+          first_name: first_name,
+          last_name: last_name
+        })
       end)
     end
   end

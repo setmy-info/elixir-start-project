@@ -4,6 +4,8 @@ defmodule GraphqlApiContext do
   @port 4004
   @url ~c"http://localhost:#{@port}/graphql"
 
+  # ── Math steps ──────────────────────────────────────────────────────────────
+
   given_(~r/^the GraphQL server is running$/, fn state ->
     {:ok, state}
   end)
@@ -34,6 +36,39 @@ defmodule GraphqlApiContext do
     %{"data" => %{"multiply" => ^expected_int}} = body
     {:ok, state}
   end)
+
+  # ── Person steps ─────────────────────────────────────────────────────────────
+
+  when_(
+    ~r/^I create a person with firstName "(?<first_name>[^"]+)" and lastName "(?<last_name>[^"]+)"$/,
+    fn state, %{first_name: first_name, last_name: last_name} ->
+      mutation = """
+      mutation {
+        createPerson(firstName: "#{first_name}", lastName: "#{last_name}") {
+          id
+          firstName
+          lastName
+        }
+      }
+      """
+
+      {200, body} = send_query(mutation)
+      %{"data" => %{"createPerson" => _}} = body
+      {:ok, state}
+    end
+  )
+
+  then_(
+    ~r/^a person with firstName "(?<first_name>[^"]+)" and lastName "(?<last_name>[^"]+)" exists$/,
+    fn state, %{first_name: first_name, last_name: last_name} ->
+      {200, body} = send_query("{ persons { firstName lastName } }")
+      persons = get_in(body, ["data", "persons"])
+      true = Enum.any?(persons, &(&1["firstName"] == first_name && &1["lastName"] == last_name))
+      {:ok, state}
+    end
+  )
+
+  # ── Helpers ──────────────────────────────────────────────────────────────────
 
   defp send_query(query) do
     body = Jason.encode!(%{query: query})

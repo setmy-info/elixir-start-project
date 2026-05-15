@@ -19,3 +19,6 @@ config :logger, :console,
 #   hostname: "localhost",
 #   database: "elixir_start_local",
 #   pool_size: 10
+
+config :core_logic, SetmyInfo.CoreLogic.Repo,
+  database: "elixir_start_local.db"
