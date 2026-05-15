@@ -16,8 +16,8 @@ jobs:
 
     strategy:
       matrix:
-        otp: ["27.x"]
-        elixir: ["1.17.x", "1.18.x"]
+        otp: ["29.x"]
+        elixir: ["1.19.x", "1.17.x", "1.18.x"]
 
     steps:
       - name: Checkout code
