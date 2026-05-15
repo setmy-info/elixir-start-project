@@ -11,6 +11,7 @@ defmodule SetmyInfo.IntegrationTests.MixProject do
       lockfile: "../../mix.lock",
       elixir: "~> 1.17",
       start_permanent: false,
+      test_ignore_filters: [~r"test/support/"],
       deps: deps()
     ]
   end
