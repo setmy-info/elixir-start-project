@@ -1,0 +1,26 @@
+# Person records — mirrors persons.yml.
+# Uses TOML array-of-tables syntax ([[persons]]) which maps to a list of maps.
+
+[[persons]]
+first_name = "Alice"
+last_name  = "Smith"
+age        = 30
+active     = true
+email      = "alice@example.com"
+roles      = ["admin", "developer"]
+
+[[persons]]
+first_name = "Bob"
+last_name  = "Jones"
+age        = 25
+active     = false
+email      = "bob@example.com"
+roles      = ["developer"]
+
+[[persons]]
+first_name = "Carol"
+last_name  = "White"
+age        = 35
+active     = true
+email      = "carol@example.com"
+roles      = ["manager", "developer"]

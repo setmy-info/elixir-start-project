@@ -14,8 +14,8 @@ defmodule ElixirStartProject.MixProject do
       # Task 3: ExDoc umbrella documentation — output inside _build/ (gitignored)
       docs: [
         main: "readme",
-        extras: ["README.md"],
-        groups_for_extras: [Guides: ["README.md"]],
+        extras: ["README.md", "HEX_PUBLISHING.md", "CHANGELOG.md"],
+        groups_for_extras: [Guides: ["README.md", "HEX_PUBLISHING.md", "CHANGELOG.md"]],
         output: "_build/doc"
       ]
     ]

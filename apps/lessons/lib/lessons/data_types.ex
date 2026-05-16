@@ -1,9 +1,9 @@
 defmodule SetmyInfo.Lessons.DataTypes do
   @moduledoc """
-  Demonstrates Elixir's core primitive data types.
+  Demonstrates Elixir's core primitive data types, variables, and constants.
 
-  All values in Elixir are immutable. Re-binding a variable name creates a new binding,
-  not an in-place mutation.
+  All values in Elixir are **immutable**. Re-binding a variable name creates a new
+  binding in the current scope — it does not mutate the old value.
 
   ## Types covered
 
@@ -14,7 +14,50 @@ defmodule SetmyInfo.Lessons.DataTypes do
   - `string` — UTF-8 binary
   - `charlist` — list of Unicode codepoints (Erlang-style)
   - `nil` — the absence of a value (also an atom)
+
+  ## Variables
+
+  Elixir variables are **dynamically typed** and **lexically scoped**. The `=` operator
+  is the *match operator*, not assignment — it pattern-matches the right side against
+  the left side and binds free variables.
+
+  ```elixir
+  x = 42          # binds x to 42
+  x = "hello"     # rebinds x to "hello" (42 is untouched)
+  ^x = "hello"    # pin: asserts x already equals "hello"; raises if not
+  _unused = 99    # _ prefix silences the unused-variable compiler warning
+  ```
+
+  ## Constants (module attributes)
+
+  Elixir has no `const` keyword. Module attributes (`@name value`) evaluated at
+  compile time serve as constants. They are inlined at every call site and do not
+  exist at runtime.
+
+  ```elixir
+  @pi 3.14159265358979
+  def circle_area(r), do: @pi * r * r
+  ```
+
+  ## Atoms (extended)
+
+  Atoms are interned: only one copy per unique name exists in the VM's global atom
+  table (default limit: 1 048 576). Never create atoms dynamically from untrusted
+  input — use `String.to_existing_atom/1` rather than `String.to_atom/1`.
+
+  ```elixir
+  :ok                            # simple atom
+  :"hello world"                 # quoted atom — any string content
+  Atom.to_string(:hello)         # => "hello"
+  String.to_existing_atom("ok")  # safe — only if :ok already exists
+  ```
   """
+
+  # ── Module-attribute constants ────────────────────────────────────────────
+  # These are inlined by the compiler wherever @name appears; they vanish at runtime.
+  @my_constant 42
+  @pi 3.14159265358979
+  @greeting "Hello"
 
   @doc "Returns the boolean `true`."
   def boolean_true, do: true
@@ -108,4 +151,131 @@ defmodule SetmyInfo.Lessons.DataTypes do
 
   @doc "Convert a charlist back to a string."
   def from_charlist(cl), do: List.to_string(cl)
+
+  # ── Variables ─────────────────────────────────────────────────────────────
+
+  @doc """
+  Demonstrates variable binding.
+
+  `x = 42` binds the name `x` to the integer `42`. The `=` sign is the
+  *match operator*, not assignment — it succeeds when the left side can be
+  made equal to the right side by binding free variables.
+  """
+  def variable_binding do
+    x = 42
+    x
+  end
+
+  @doc """
+  Demonstrates variable rebinding.
+
+  Rebinding `x` to a new value does **not** mutate the old value — it creates a
+  new binding in the current scope. The previous value is unchanged (and will be
+  garbage-collected when no longer referenced).
+  """
+  def variable_rebind do
+    x = 1
+    x = x + 1
+    x
+  end
+
+  @doc """
+  Demonstrates the pin operator `^`.
+
+  `^x` in a pattern asserts that the variable already has that value — it does
+  **not** rebind. Useful in `case`, `=`, and function heads to match against an
+  existing binding.
+  """
+  def variable_pin(expected) do
+    value = expected
+
+    case value do
+      ^expected -> :matched
+      _ -> :not_matched
+    end
+  end
+
+  @doc """
+  Demonstrates the `_` unused-variable prefix.
+
+  Prefixing a variable with `_` tells the compiler the value is intentionally
+  ignored, silencing the "variable is unused" warning.
+  """
+  def variable_unused do
+    _ignored = "this value is never used"
+    :ok
+  end
+
+  # ── Constants (module attributes) ─────────────────────────────────────────
+
+  @doc """
+  Returns the compile-time constant `@my_constant`.
+
+  Module attributes annotated before a function are inlined at their use sites by
+  the compiler. They exist **only** at compile time — `@my_constant` has no runtime
+  identity (no atom, no ETS entry).
+  """
+  def constant_value, do: @my_constant
+
+  @doc """
+  Returns the `@pi` module-attribute constant.
+
+  A common pattern for mathematical or configuration constants: define once at the
+  top of the module, use `@name` anywhere in the module body.
+  """
+  def pi_value, do: @pi
+
+  @doc "Returns the `@greeting` string constant."
+  def greeting_constant, do: @greeting
+
+  # ── Atoms (extended) ──────────────────────────────────────────────────────
+
+  @doc """
+  Converts an atom to its string representation.
+
+  `Atom.to_string/1` extracts the atom's name as a binary string.
+  The reverse (safe direction) is `String.to_existing_atom/1`.
+  """
+  def atom_to_string_example, do: Atom.to_string(:hello)
+
+  @doc """
+  Converts a string to an **already-existing** atom.
+
+  `String.to_existing_atom/1` is safe: it raises `ArgumentError` if the atom was
+  never interned, preventing atom-table exhaustion from untrusted input.
+  Never use `String.to_atom/1` with user-supplied strings.
+  """
+  def atom_from_existing_string, do: String.to_existing_atom("ok")
+
+  @doc """
+  Demonstrates a quoted atom — atoms whose names contain spaces or special chars.
+
+  Any string can be an atom name when wrapped in `:"..."`. The value is still just
+  an atom; only the syntax differs.
+  """
+  def atom_quoted_example, do: :"hello world"
+
+  @doc """
+  Shows the three special atoms that double as reserved words: `true`, `false`, `nil`.
+
+  All three are atoms. `is_atom/1` returns `true` for each. They are also the only
+  atoms that can be written without a leading colon in Elixir source.
+  """
+  def atom_reserved_examples, do: {true, false, nil}
+
+  @doc """
+  Atoms are compared by identity (O(1)), not by content.
+
+  Because each atom name exists exactly once in the VM's atom table, `==` on atoms
+  is a single pointer comparison — faster than string comparison.
+  """
+  def atom_equality, do: :ok == :ok
+
+  @doc """
+  Returns the `:ok` and `:error` convention atoms.
+
+  Elixir APIs conventionally return `{:ok, value}` on success and
+  `{:error, reason}` on failure. Pattern-matching on these tuples is idiomatic.
+  """
+  def atom_ok_error, do: {:ok, :error}
 end

@@ -8,6 +8,28 @@ convention but in Elixir's `CamelCase` module form.
 
 ---
 
+## Hex.pm packages
+
+Each sub-app is published as an independent package under the `setmy_info_*` namespace.
+Full publishing guide: [`HEX_PUBLISHING.md`](HEX_PUBLISHING.md).
+
+| Package | hex.pm |
+|---|---|
+| `setmy_info_core_logic` | Ecto schemas, YAML parsing, OTP supervision |
+| `setmy_info_runtime_engine` | Dynamic module loader, hot-code reload |
+| `setmy_info_graphql_api` | Absinthe + Plug + Cowboy GraphQL API |
+| `setmy_info_cli` | CLI escript |
+| `setmy_info_lessons` | Elixir learning examples |
+| `setmy_info_wasm` | WebAssembly stub |
+
+```elixir
+# mix.exs — use individual packages
+{:setmy_info_core_logic, "~> 0.1"}
+{:setmy_info_runtime_engine, "~> 0.1"}
+```
+
+---
+
 ## Quick-reference commands
 
 | Goal | Command |
@@ -280,6 +302,68 @@ YAML fixture files live in `apps/integration_tests/test/fixtures/yaml/`:
 mix test.integration
 # or directly:
 mix test apps/integration_tests/test/integration/yaml_parsing_test.exs
+```
+
+---
+
+## TOML parsing
+
+TOML support is provided by `SetmyInfo.CoreLogic.TomlParser`, a thin wrapper around
+[toml](https://hex.pm/packages/toml).
+
+```elixir
+alias SetmyInfo.CoreLogic.TomlParser
+
+# Parse a TOML string
+{:ok, config} = TomlParser.parse(~s(host = "localhost"\nport = 4000))
+
+# Parse a TOML file
+{:ok, data} = TomlParser.parse_file("/path/to/config.toml")
+```
+
+### TOML → Elixir type mapping
+
+| TOML | Elixir |
+|---|---|
+| `"string"` | `String.t()` |
+| `42` / `-17` | `integer()` |
+| `0xFF` / `0o77` / `0b1010` | `integer()` |
+| `3.14` / `1.5e3` | `float()` |
+| `true` / `false` | `boolean()` |
+| `[a, b, c]` | `list()` |
+| `[section]` | `map()` (string keys) |
+| `[[array_of_tables]]` | `[map()]` |
+| `2024-01-15` | `Date.t()` |
+| `09:30:00` | `Time.t()` |
+| `1979-05-27T07:32:00` | `NaiveDateTime.t()` |
+| `1979-05-27T07:32:00Z` | `DateTime.t()` |
+
+**Notable differences from YAML:**
+
+| Feature | YAML | TOML |
+|---|---|---|
+| Null/nil | `~` / `null` | *(not supported — omit the key)* |
+| Multi-document | `---` separator | *(not supported)* |
+| DRY / reuse | `&anchor` / `*alias` | *(not supported)* |
+| Datetime types | strings | `Date`, `Time`, `NaiveDateTime`, `DateTime` |
+| Integer bases | decimal only | `0x`, `0o`, `0b` prefixes |
+
+### Fixture files
+
+TOML fixture files live in `apps/integration_tests/test/fixtures/toml/`:
+
+| File | Demonstrates |
+|---|---|
+| `config.toml` | Application config with nested tables and feature flags |
+| `persons.toml` | Person records via `[[array-of-tables]]` → Ecto changeset hydration |
+| `types.toml` | All TOML types including dates, times, hex/octal/binary integers |
+
+### Integration tests
+
+```sh
+mix test.integration
+# or directly:
+mix test apps/integration_tests/test/integration/toml_parsing_test.exs
 ```
 
 ---

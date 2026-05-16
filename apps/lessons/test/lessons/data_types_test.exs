@@ -95,6 +95,57 @@ defmodule SetmyInfo.Lessons.DataTypesTest do
       assert DataTypes.boolean_is_atom() == true
       assert is_atom(nil)
     end
+
+    test "atom to/from string conversions" do
+      IO.puts("\n--- Atom conversions ---")
+      IO.puts("Atom.to_string(:hello)            => #{DataTypes.atom_to_string_example()}")
+      IO.puts("String.to_existing_atom(\"ok\")     => #{DataTypes.atom_from_existing_string()}")
+
+      assert DataTypes.atom_to_string_example() == "hello"
+      assert DataTypes.atom_from_existing_string() == :ok
+    end
+
+    test "quoted atoms allow any string content as atom name" do
+      IO.puts("\n--- Quoted atoms ---")
+      IO.puts(~s(:"hello world" => #{inspect(DataTypes.atom_quoted_example())}))
+
+      assert DataTypes.atom_quoted_example() == :"hello world"
+      assert is_atom(DataTypes.atom_quoted_example())
+    end
+
+    test "true, false, nil are reserved-word atoms" do
+      IO.puts("\n--- Reserved atoms ---")
+      {t, f, n} = DataTypes.atom_reserved_examples()
+      IO.puts("true  is_atom => #{is_atom(t)}")
+      IO.puts("false is_atom => #{is_atom(f)}")
+      IO.puts("nil   is_atom => #{is_atom(n)}")
+
+      assert is_atom(true)
+      assert is_atom(false)
+      assert is_atom(nil)
+    end
+
+    test "atom equality is identity comparison — O(1)" do
+      IO.puts("\n--- Atom equality ---")
+      IO.puts(":ok == :ok  => #{DataTypes.atom_equality()}")
+      IO.puts(":ok == :err => #{:ok == :error}")
+
+      assert DataTypes.atom_equality() == true
+      # Two distinct atoms are never equal; verified via a runtime list membership check
+      # to avoid Elixir 1.19+ always-disjoint type-comparison warnings.
+      {ok, error} = DataTypes.atom_ok_error()
+      refute Enum.member?([ok], error)
+    end
+
+    test ":ok and :error are the idiomatic result atoms" do
+      IO.puts("\n--- :ok / :error convention ---")
+      {ok, error} = DataTypes.atom_ok_error()
+      IO.puts(":ok    => #{ok}")
+      IO.puts(":error => #{error}")
+
+      assert ok == :ok
+      assert error == :error
+    end
   end
 
   describe "Strings" do
@@ -131,6 +182,54 @@ defmodule SetmyInfo.Lessons.DataTypesTest do
       assert DataTypes.is_nil_check(nil) == true
       assert DataTypes.is_nil_check(false) == false
       assert DataTypes.is_nil_check(0) == false
+    end
+  end
+
+  describe "Variables" do
+    test "variable binding — = is the match operator, not assignment" do
+      IO.puts("\n=== VARIABLES ===")
+      IO.puts("variable_binding/0 => #{DataTypes.variable_binding()}")
+      IO.puts("variable_rebind/0  => #{DataTypes.variable_rebind()}")
+
+      assert DataTypes.variable_binding() == 42
+      assert DataTypes.variable_rebind() == 2
+    end
+
+    test "pin operator ^ prevents rebinding" do
+      IO.puts("\n--- Pin operator ---")
+      IO.puts("variable_pin(10) matched  => #{DataTypes.variable_pin(10)}")
+
+      assert DataTypes.variable_pin(10) == :matched
+      assert DataTypes.variable_pin(99) == :matched
+    end
+
+    test "_ prefix silences unused-variable compiler warnings" do
+      IO.puts("\n--- Unused variable ---")
+      IO.puts("variable_unused/0 => #{DataTypes.variable_unused()}")
+
+      assert DataTypes.variable_unused() == :ok
+    end
+  end
+
+  describe "Constants (module attributes)" do
+    test "module attributes are compile-time constants" do
+      IO.puts("\n=== CONSTANTS (module attributes) ===")
+      IO.puts("@my_constant => #{DataTypes.constant_value()}")
+      IO.puts("@pi          => #{DataTypes.pi_value()}")
+      IO.puts("@greeting    => #{DataTypes.greeting_constant()}")
+
+      assert DataTypes.constant_value() == 42
+      assert DataTypes.pi_value() == 3.14159265358979
+      assert DataTypes.greeting_constant() == "Hello"
+    end
+
+    test "module attribute values are inlined — no runtime symbol" do
+      IO.puts("\n--- Compile-time inlining ---")
+      # The value returned is just a plain integer/string/float — not an atom or ref.
+      # There is no runtime accessor for @my_constant; it simply becomes 42 in the BEAM bytecode.
+      assert is_integer(DataTypes.constant_value())
+      assert is_float(DataTypes.pi_value())
+      assert is_binary(DataTypes.greeting_constant())
     end
   end
 

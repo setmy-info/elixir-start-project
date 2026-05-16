@@ -66,3 +66,11 @@ jobs:
 
       - name: Run Gherkin e2e tests
         run: mix test.gherkin
+
+      - name: Security audit
+        run: mix audit
+        # absinthe_plug 1.5.9 has a known XSS advisory (GHSA-c62g-j346-39v5) with no patch yet
+        continue-on-error: true
+
+      - name: Build documentation
+        run: mix docs

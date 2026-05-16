@@ -1,16 +1,22 @@
 defmodule SetmyInfo.GraphqlApi.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+  @source_url "https://github.com/setmy-info/elixir-start-project"
+
   def project do
     [
       app: :graphql_api,
-      version: "0.1.0",
+      version: @version,
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :live,
+      description: description(),
+      package: package(),
+      docs: docs(),
       deps: deps()
     ]
   end
@@ -22,14 +28,43 @@ defmodule SetmyInfo.GraphqlApi.MixProject do
     ]
   end
 
+  defp description do
+    "GraphQL API layer built with Absinthe + Plug + Cowboy, backed by SetmyInfo.RuntimeEngine."
+  end
+
+  defp package do
+    [
+      name: "setmy_info_graphql_api",
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => @source_url,
+        "Changelog" => "#{@source_url}/blob/master/CHANGELOG.md"
+      },
+      files: ~w(lib mix.exs README.md LICENSE)
+    ]
+  end
+
+  defp docs do
+    [
+      main: "SetmyInfo.GraphqlApi.Schema",
+      source_url: @source_url,
+      source_ref: "v#{@version}",
+      extras: ["README.md"]
+    ]
+  end
+
   defp deps do
     [
+      # When publishing to hex.pm, replace the two lines below with:
+      # {:setmy_info_core_logic, "~> 0.1"},
+      # {:setmy_info_runtime_engine, "~> 0.1"},
       {:core_logic, in_umbrella: true},
       {:runtime_engine, in_umbrella: true},
       {:absinthe, "~> 1.7"},
       {:absinthe_plug, "~> 1.5"},
       {:plug_cowboy, "~> 2.7"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
   end
 end
