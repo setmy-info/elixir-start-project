@@ -44,15 +44,15 @@ defmodule SetmyInfo.Lessons.BitwiseOps do
   # ──────────────────── Bitwise XOR ────────────────────────────────────────────
 
   @doc "Bitwise XOR — bits set in ONE operand but not both."
-  def bit_xor(a, b), do: a ^^^ b
+  def bit_xor(a, b), do: bxor(a, b)
 
   @doc "Toggle (flip) a flag bit using XOR."
-  def toggle_flag(value, flag), do: value ^^^ flag
+  def toggle_flag(value, flag), do: bxor(value, flag)
 
   # ──────────────────── Bitwise NOT ────────────────────────────────────────────
 
   @doc "Bitwise NOT — flip all bits (one's complement)."
-  def bit_not(a), do: ~~~a
+  def bit_not(a), do: bnot(a)
 
   # ──────────────────── Bit shifts ─────────────────────────────────────────────
 
@@ -69,16 +69,16 @@ defmodule SetmyInfo.Lessons.BitwiseOps do
   # ──────────────────── Practical examples ─────────────────────────────────────
 
   @doc "Extract the red component from an RGB colour encoded as 0xRRGGBB."
-  def rgb_red(colour), do: (colour >>> 16) &&& 0xFF
+  def rgb_red(colour), do: colour >>> 16 &&& 0xFF
 
   @doc "Extract the green component."
-  def rgb_green(colour), do: (colour >>> 8) &&& 0xFF
+  def rgb_green(colour), do: colour >>> 8 &&& 0xFF
 
   @doc "Extract the blue component."
   def rgb_blue(colour), do: colour &&& 0xFF
 
   @doc "Pack red/green/blue bytes into a single 0xRRGGBB integer."
-  def rgb_pack(r, g, b), do: (r <<< 16) ||| (g <<< 8) ||| b
+  def rgb_pack(r, g, b), do: r <<< 16 ||| g <<< 8 ||| b
 
   @doc "Round up to next power of 2 (useful for buffer allocation)."
   def next_power_of_two(n) when n <= 1, do: 1
@@ -131,7 +131,7 @@ defmodule SetmyInfo.Lessons.BitwiseOps do
   (Symmetric: encrypt twice with the same key gives original.)
   """
   def xor_cipher(binary, key) when is_binary(binary) and is_integer(key) do
-    for <<byte <- binary>>, into: <<>>, do: <<byte ^^^ key>>
+    for <<byte <- binary>>, into: <<>>, do: <<bxor(byte, key)>>
   end
 
   @doc "Count the number of set bits (popcount) in an integer."

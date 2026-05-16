@@ -132,7 +132,10 @@ defmodule SetmyInfo.Lessons.BitwiseOpsTest do
     test "RGB colour component extraction" do
       IO.puts("\n=== RGB COLOUR MANIPULATION ===")
       coral = 0xFF6B6B
-      IO.puts("coral #FF6B6B => R=#{BitwiseOps.rgb_red(coral)} G=#{BitwiseOps.rgb_green(coral)} B=#{BitwiseOps.rgb_blue(coral)}")
+
+      IO.puts(
+        "coral #FF6B6B => R=#{BitwiseOps.rgb_red(coral)} G=#{BitwiseOps.rgb_green(coral)} B=#{BitwiseOps.rgb_blue(coral)}"
+      )
 
       assert BitwiseOps.rgb_red(coral) == 0xFF
       assert BitwiseOps.rgb_green(coral) == 0x6B
