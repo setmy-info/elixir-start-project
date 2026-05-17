@@ -3,14 +3,21 @@ defmodule SetmyInfo.Wasm.Engine do
   Stub for a future WASM execution engine.
 
   Architecture notes for future implementation:
-  - wasmex (Elixir binding to Wasmer via Rust NIF):
-      {:wasmex, "~> 0.9"}
-  - Extism (WASM plugin system with many language SDKs):
-      {:extism, "~> 1.0"}
-  - Custom NIF via Rustler:
-      {:rustler, "~> 0.30"}
 
-  Each backend would implement the SetmyInfo.RuntimeEngine.Module behaviour,
+  - **wasmex** (Elixir binding to Wasmer via Rust NIF):
+    ```elixir
+    {:wasmex, "~> 0.9"}
+    ```
+  - **Extism** (WASM plugin system with many language SDKs):
+    ```elixir
+    {:extism, "~> 1.0"}
+    ```
+  - **Custom NIF via Rustler**:
+    ```elixir
+    {:rustler, "~> 0.30"}
+    ```
+
+  Each backend would implement the `SetmyInfo.RuntimeEngine.Module` behaviour,
   meaning the Loader/Worker/Executor layer requires zero changes.
   """
 
