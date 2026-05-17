@@ -60,7 +60,7 @@ defmodule SetmyInfo.CoreLogic.MixProject do
       {:ecto_sqlite3, "~> 0.17"},
       {:yaml_elixir, "~> 2.12"},
       {:toml, "~> 0.7"},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.34", only: [:dev, :ci], runtime: false}
     ]
   end
 end

@@ -45,7 +45,7 @@ defmodule ElixirStartProject.MixProject do
   defp deps do
     [
       # Task 3: API documentation generation (Elixir-style, like Javadoc)
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.34", only: [:dev, :ci], runtime: false},
       # Task 4: unit-test coverage with HTML report
       {:excoveralls, "~> 0.18", only: :test},
       # Task 2: mutation testing — run 'mix muzak' after 'mix deps.get'

@@ -64,7 +64,7 @@ defmodule SetmyInfo.GraphqlApi.MixProject do
       {:absinthe_plug, "~> 1.5"},
       {:plug_cowboy, "~> 2.7"},
       {:jason, "~> 1.4"},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.34", only: [:dev, :ci], runtime: false}
     ]
   end
 end

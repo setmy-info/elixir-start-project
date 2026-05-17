@@ -58,7 +58,7 @@ defmodule SetmyInfo.Wasm.MixProject do
       # When publishing to hex.pm, replace the line below with:
       # {:setmy_info_runtime_engine, "~> 0.1"},
       {:runtime_engine, in_umbrella: true},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.34", only: [:dev, :ci], runtime: false}
     ]
   end
 end
