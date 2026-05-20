@@ -1,4 +1,4 @@
-defmodule Counter do
+defmodule SetmyInfo.Scripts.Counter do
   use Agent
 
   def start_link(_) do

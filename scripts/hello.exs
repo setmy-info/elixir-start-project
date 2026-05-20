@@ -12,43 +12,39 @@ Path.wildcard(Path.join(scripts_dir, "Elixir.*.beam"))
   module = beam_path |> Path.basename(".beam") |> String.to_atom()
   :code.purge(module)
   :code.delete(module)
-#  :code.purge(module)
   File.rm!(beam_path)
 end)
 
 # Code.compile_file also loads the freshly compiled module into memory,
-# so we purge/delete/purge after writing the .beam to leave memory clean.
+# so we purge/delete after writing the .beam to leave memory clean.
 for source <- ["counter.ex", "string_processor.ex"] do
   [{module, binary}] = Code.compile_file(source, scripts_dir)
   File.write!(Path.join(scripts_dir, "#{module}.beam"), binary)
   :code.purge(module)
   :code.delete(module)
-#  :code.purge(module)
 end
 
-# ── 1. LOAD Counter from .beam ────────────────────────────────────────────────
-{:module, Counter} =
-  :code.load_abs(Path.join(scripts_dir, "Elixir.Counter") |> String.to_charlist())
+# ── 1. LOAD SetmyInfo.Scripts.Counter from .beam ─────────────────────────────
+{:module, SetmyInfo.Scripts.Counter} =
+  :code.load_abs(Path.join(scripts_dir, "Elixir.SetmyInfo.Scripts.Counter") |> String.to_charlist())
 
-{:ok, _} = Counter.start_link(nil)
-text = Counter.inc_text("Hello")
+{:ok, _} = SetmyInfo.Scripts.Counter.start_link(nil)
+text = SetmyInfo.Scripts.Counter.inc_text("Hello")
 
-:code.purge(Counter)
-:code.delete(Counter)
-#:code.purge(Counter)
+:code.purge(SetmyInfo.Scripts.Counter)
+:code.delete(SetmyInfo.Scripts.Counter)
 
-# ── 2. LOAD StringProcessor from .beam ────────────────────────────────────────
-{:module, StringProcessor} =
-  :code.load_abs(Path.join(scripts_dir, "Elixir.StringProcessor") |> String.to_charlist())
+# ── 2. LOAD SetmyInfo.Scripts.StringProcessor from .beam ─────────────────────
+{:module, SetmyInfo.Scripts.StringProcessor} =
+  :code.load_abs(Path.join(scripts_dir, "Elixir.SetmyInfo.Scripts.StringProcessor") |> String.to_charlist())
 
 result =
   text
-  |> StringProcessor.add_word()
-  |> StringProcessor.add_suffix()
+  |> SetmyInfo.Scripts.StringProcessor.add_word()
+  |> SetmyInfo.Scripts.StringProcessor.add_suffix()
 
-:code.purge(StringProcessor)
-:code.delete(StringProcessor)
-#:code.purge(StringProcessor)
+:code.purge(SetmyInfo.Scripts.StringProcessor)
+:code.delete(SetmyInfo.Scripts.StringProcessor)
 
 # ── OUTPUT ────────────────────────────────────────────────────────────────────
 IO.puts(result)
