@@ -18,7 +18,8 @@ defmodule SetmyInfo.Cli.MixProject do
       package: package(),
       docs: docs(),
       deps: deps(),
-      escript: escript()
+      escript: escript(),
+      test_coverage: [summary: false]
     ]
   end
 

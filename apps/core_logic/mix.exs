@@ -17,7 +17,8 @@ defmodule SetmyInfo.CoreLogic.MixProject do
       description: description(),
       package: package(),
       docs: docs(),
-      deps: deps()
+      deps: deps(),
+      test_coverage: [summary: false]
     ]
   end
 

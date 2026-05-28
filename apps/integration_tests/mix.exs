@@ -12,7 +12,8 @@ defmodule SetmyInfo.IntegrationTests.MixProject do
       elixir: "~> 1.17",
       start_permanent: false,
       test_ignore_filters: [~r/test\/support\//],
-      deps: deps()
+      deps: deps(),
+      test_coverage: [summary: false]
     ]
   end
 

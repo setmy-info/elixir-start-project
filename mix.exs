@@ -10,7 +10,7 @@ defmodule ElixirStartProject.MixProject do
       deps: deps(),
       aliases: aliases(),
       # Task 4: unit-test coverage via ExCoveralls
-      test_coverage: [tool: ExCoveralls],
+      test_coverage: [tool: ExCoveralls, summary: [threshold: 0]],
       # Task 3: ExDoc umbrella documentation — output inside _build/ (gitignored)
       docs: [
         main: "readme",
@@ -31,6 +31,7 @@ defmodule ElixirStartProject.MixProject do
         "test.all": :test,
         "test.mutation": :test,
         "test.coverage": :test,
+        report: :test,
         validate: :test,
         # ExCoveralls tasks
         coveralls: :test,
@@ -45,15 +46,15 @@ defmodule ElixirStartProject.MixProject do
   defp deps do
     [
       # Task 3: API documentation generation (Elixir-style, like Javadoc)
-      {:ex_doc, "~> 0.34", only: [:dev, :ci], runtime: false},
+      {:ex_doc, "~> 0.34", only: [:dev, :test, :ci], runtime: false},
       # Task 4: unit-test coverage with HTML report
       {:excoveralls, "~> 0.18", only: :test},
       # Task 2: mutation testing — run 'mix muzak' after 'mix deps.get'
       {:muzak, "~> 1.0", only: :test},
       # Task 6: dependency vulnerability audit (equiv. OWASP DependencyCheck)
-      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test, :ci], runtime: false},
       # Task 6: static security analysis for Elixir/Plug code
-      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
+      {:sobelow, "~> 0.13", only: [:dev, :test, :ci], runtime: false}
     ]
   end
 
@@ -103,7 +104,7 @@ defmodule ElixirStartProject.MixProject do
 
       # Task 4: Coverage report for unit tests — HTML output in _build/cover/<app>/
       # Equivalent of Maven Surefire/JaCoCo HTML report
-      "test.coverage": ["test.coverage"],
+      "test.coverage": ["coveralls.html #{Enum.join(@unit_test_paths, " ")}"],
 
       # Task 6: Dependency vulnerability audit (equiv. OWASP DependencyCheck)
       audit: ["deps.audit"],

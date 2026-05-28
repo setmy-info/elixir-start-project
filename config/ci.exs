@@ -23,4 +23,5 @@ config :logger, :console,
 #   pool: Ecto.Adapters.SQL.Sandbox
 
 config :core_logic, SetmyInfo.CoreLogic.Repo,
-  database: "/tmp/elixir_start_ci.db"
+  database: "/tmp/elixir_start_ci.db",
+  pool_size: 1
