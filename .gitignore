@@ -1,26 +1,26 @@
 # Build artefacts — _build/ holds compiled code, docs, and reports
-/_build
-/deps
-/.fetch
+**/_build
+**/deps
+**/.fetch
 
 # Per-app coverage dirs (written by excoveralls; collected into _build/cover/ by mix test.coverage)
-apps/*/cover
+**/cover/**
 
 # Erlang crash dumps
-erl_crash.dump
-*.ez
+**/erl_crash.dump
+**/*.ez
 
 # BEAM bytecode (committed only if checked into release packages)
-*.beam
+**/*.beam
 
 # Runtime secrets — never commit these
-/config/*.secret.exs
+**/config/*.secret.exs
 
 # Escript binaries (built with `mix escript.build` in apps/cli)
-/apps/cli/cli
+**/apps/cli/cli
 
 # Editor / tooling
-.elixir_ls/
+**/.elixir_ls/
 .elixir-tools/
 .idea/
 *.iml
@@ -32,3 +32,5 @@ erl_crash.dump
 # OS artefacts
 .DS_Store
 Thumbs.db
+
+claude.session.sh
