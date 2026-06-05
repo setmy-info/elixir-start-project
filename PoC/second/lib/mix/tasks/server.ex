@@ -18,6 +18,7 @@ defmodule Mix.Tasks.Server do
   @doc """
   Enables the HTTP server and delegates to `mix run --no-halt`.
   """
+  @impl Mix.Task
   def run(args) do
     System.put_env("CALCULATOR_SERVER", "true")
     Mix.Task.run("run", args ++ ["--no-halt"])

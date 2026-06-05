@@ -10,6 +10,7 @@ defmodule Mix.Tasks.Test.Integration do
   @doc """
   Delegates to `mix test` with the integration-test directory.
   """
+  @impl Mix.Task
   def run(args) do
     Mix.Task.run("test", ["test/integration" | args])
   end

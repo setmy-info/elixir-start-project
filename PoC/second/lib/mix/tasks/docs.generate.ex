@@ -18,6 +18,7 @@ defmodule Mix.Tasks.Docs.Generate do
   @doc """
   Generates ExDoc, coverage output, and quality reports under the `docs` directory.
   """
+  @impl Mix.Task
   def run(_args) do
     docs_dir = Path.expand("docs", File.cwd!())
     File.mkdir_p!(docs_dir)

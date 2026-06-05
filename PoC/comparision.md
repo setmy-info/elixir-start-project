@@ -14,9 +14,9 @@ on top of that engine.
 ### PoC/second — Single-app layered service (add only)
 
 Flat single-app (`calculator_app`) with a clean three-layer architecture:
-`Math.MathService` (pure logic) → `CalculatorRest.Router` (Plug REST) +
-`CalculatorRest.Schema` (Absinthe GraphQL) + `CalculatorRest.Swagger` (OpenAPI 3.2) +
-`CalculatorCli.Main` (escript). Static web frontend served on the same port.
+`SetmyInfo.Math.MathService` (pure logic) → `SetmyInfo.CalculatorRest.Router` (Plug REST) +
+`SetmyInfo.CalculatorRest.Schema` (Absinthe GraphQL) + `SetmyInfo.CalculatorRest.Swagger` (OpenAPI 3.2) +
+`SetmyInfo.CalculatorCli.Main` (escript). Static web frontend served on the same port.
 Custom Mix tasks. Logger with file backend. Credo static analysis.
 
 ---
@@ -71,7 +71,7 @@ Each item describes **what to implement**, **which Elixir concept it teaches**, 
 
 ### 1. GenServer with state — stateful calculation history
 
-**What:** A `CalculatorApp.History` GenServer that stores the last N operations and
+**What:** A `SetmyInfo.CalculatorApp.History` GenServer that stores the last N operations and
 their results in its state. Expose `add_entry/3`, `last/0`, `all/0`, `clear/0`.
 
 **Teaches:**
@@ -80,7 +80,7 @@ their results in its state. Expose `add_entry/3`, `last/0`, `all/0`, `clear/0`.
 - GenServer state as plain maps
 - Named registration (`name: __MODULE__`)
 - Difference between `call` (synchronous reply) and `cast` (fire-and-forget)
-- Supervision: start it as a child in `CalculatorApp.Application`
+- Supervision: start it as a child in `SetmyInfo.CalculatorApp.Application`
 
 **Calculator fit:** Every `/api/add` call appends `{a, b, result, timestamp}` to the
 history. New route `GET /api/history` returns the list.
@@ -89,7 +89,7 @@ history. New route `GET /api/history` returns the list.
 
 ### 2. ETS table — calculation result cache
 
-**What:** A `CalculatorApp.Cache` module that wraps a named ETS table. On a cache hit
+**What:** A `SetmyInfo.CalculatorApp.Cache` module that wraps a named ETS table. On a cache hit
 (same `{a, b}` pair seen before) the Router returns the stored result without calling
 `MathService`. On a miss it computes, stores, and returns.
 
@@ -126,7 +126,7 @@ module alias, demonstrating real-world process discovery.
 
 ### 4. Behaviour definition — pluggable operation modules
 
-**What:** Define a `CalculatorApp.Operation` behaviour with callbacks `name/0` and
+**What:** Define a `SetmyInfo.CalculatorApp.Operation` behaviour with callbacks `name/0` and
 `execute/2`. Implement it for `Add`, `Subtract`, `Multiply`, `Divide`. A dispatcher
 selects the right implementation by name.
 
@@ -144,7 +144,7 @@ separate module, making it trivial to add new operations without changing existi
 
 ### 5. OTP supervisor tree — multi-level supervision
 
-**What:** Add a second supervisor level. Create `CalculatorApp.ServiceSupervisor` that
+**What:** Add a second supervisor level. Create `SetmyInfo.CalculatorApp.ServiceSupervisor` that
 supervises the Cache GenServer and the History GenServer. The Application supervisor
 supervises `ServiceSupervisor` (the `:rest_for_one` strategy) and optionally Cowboy.
 
@@ -161,7 +161,7 @@ supervises `ServiceSupervisor` (the `:rest_for_one` strategy) and optionally Cow
 
 ### 6. Task — parallel computation
 
-**What:** A `CalculatorApp.Parallel` module that accepts a list of `{a, b}` pairs and
+**What:** A `SetmyInfo.CalculatorApp.Parallel` module that accepts a list of `{a, b}` pairs and
 computes all results concurrently using `Task.async/1` + `Task.await/2` (or
 `Task.async_stream/3`).
 
@@ -177,7 +177,7 @@ computes all results concurrently using `Task.async/1` + `Task.await/2` (or
 
 ### 7. Agent — shared mutable state (simple alternative to GenServer)
 
-**What:** A `CalculatorApp.RunningTotal` Agent that keeps a running sum. Operations:
+**What:** A `SetmyInfo.CalculatorApp.RunningTotal` Agent that keeps a running sum. Operations:
 `add/1` (accumulate), `get/0` (current total), `reset/0`.
 
 **Teaches:**
@@ -240,7 +240,7 @@ covering the add endpoint over HTTP. Write a `CalculatorContext` module with
 ### 11. Hot code swap — reload MathService at runtime
 
 **What:** Port `HotCode` from first PoC into second PoC. Add a Mix task
-`mix calculator.reload` that compiles a new version of `Math.MathService` from source
+`mix calculator.reload` that compiles a new version of `SetmyInfo.Math.MathService` from source
 and loads it into the running VM with `Code.compile_string/1` without restarting the
 application.
 
@@ -257,7 +257,7 @@ application.
 
 ### 12. Protocol — Calculable for different numeric types
 
-**What:** Define a `CalculatorApp.Calculable` protocol with `to_number/1`. Implement
+**What:** Define a `SetmyInfo.CalculatorApp.Calculable` protocol with `to_number/1`. Implement
 it for `Integer`, `Float`, and `BitString` (parses string to integer). Update
 `MathService.add/2` to call `Calculable.to_number/1` before computing.
 
@@ -274,7 +274,7 @@ it for `Integer`, `Float`, and `BitString` (parses string to integer). Update
 ### 13. Standalone Elixir scripts
 
 **What:** Add `scripts/add.exs` — a standalone script that takes two integer arguments,
-calls `Math.MathService.add/2` inline (no running app), and prints the result. Also
+calls `SetmyInfo.Math.MathService.add/2` inline (no running app), and prints the result. Also
 demonstrate BEAM lifecycle: compile a helper module at startup, use it, purge it.
 
 **Teaches:**
@@ -290,7 +290,7 @@ demonstrate BEAM lifecycle: compile a helper module at startup, use it, purge it
 
 ### 14. Subtract and multiply operations
 
-**What:** Add `subtract/2` and `multiply/2` to `Math.MathService`, expose them on
+**What:** Add `subtract/2` and `multiply/2` to `SetmyInfo.Math.MathService`, expose them on
 the REST API (`POST /api/subtract`, `POST /api/multiply`), the GraphQL schema
 (`:subtract`, `:multiply` fields), and the CLI (`calculator_app add 2 3`,
 `calculator_app multiply 2 3`).
@@ -308,7 +308,7 @@ the REST API (`POST /api/subtract`, `POST /api/multiply`), the GraphQL schema
 ### 15. Mutation testing (Muzak)
 
 **What:** Add `{:muzak, "~> 1.0", only: :test}` and a `.muzak.exs` config. Run
-`mix muzak` against `Math.MathService` to see how many mutants survive undetected.
+`mix muzak` against `SetmyInfo.Math.MathService` to see how many mutants survive undetected.
 
 **Teaches:**
 
@@ -395,12 +395,12 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 | 7  | Pattern matching over conditionals                                |              ✓               | Router uses `with`, function clause matching throughout                                                                        |
 | 8  | `{:ok, result}                                                    | {:error, reason}` convention | ✓                                                                                                                              | `MathService` implicitly (no errors); Router uses `with` |
 | 9  | No bare `raise` in production code                                |              ✓               | `Application.start/2` uses `rescue` around file-logging setup                                                                  |
-| 10 | `defstruct` for typed data                                        |              ✓               | `CalculatorCli.Models.Input` uses `defstruct`                                                                                  |
+| 10 | `defstruct` for typed data                                        |              ✓               | `SetmyInfo.CalculatorCli.Models.Input` uses `defstruct`                                                                                  |
 | 11 | Supervisor strategy chosen deliberately                           |              ✓               | `:one_for_one` is correct for independent HTTP server child                                                                    |
 | 12 | Application config via `Application.fetch_env!/2`                 |              ✓               | Port and server flag read from application env                                                                                 |
-| 13 | No hardcoded ports or paths in module body                        |              ~               | `@web_app_dir` is computed at compile time from `__DIR__`; acceptable for a dev PoC                                            |
+| 13 | No hardcoded ports or paths in module body                        |              ✓               | `@web_app_dir` removed; router uses `:code.priv_dir(:calculator_app)` and `{:calculator_app, "priv/static"}` — both release-safe |
 | 14 | `Plug.Logger` for request logging                                 |              ✓               | Present in the pipeline                                                                                                        |
-| 15 | Plug pipeline order: static → logger → parsers → match → dispatch |              ~               | Static is before logger; logger should be first to time the full request including static file serving                         |
+| 15 | Plug pipeline order: logger → static → parsers → match → dispatch |              ✓               | `Plug.Logger` moved before `Plug.Static` — all requests including static file serving are now timed                            |
 
 ---
 
@@ -409,7 +409,7 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 | #  | Check                                            | Status | Notes                                                                                                                                              |
 |----|--------------------------------------------------|:------:|----------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1  | Unit tests cover all public functions            |   ✓    | `MathService` has tests for positive, negative, zero, large values                                                                                 |
-| 2  | `doctest` matches implementation                 |   ✓    | `doctest Math.MathService` present and passes                                                                                                      |
+| 2  | `doctest` matches implementation                 |   ✓    | `doctest SetmyInfo.Math.MathService` present and passes                                                                                                      |
 | 3  | Integration tests use `Plug.Test` (no real HTTP) |   ✓    | `conn(:post, …)                                                                                                                                    |> Router.call([])` pattern |
 | 4  | All HTTP status codes tested                     |   ✓    | 200, 400, 406, 415, 404 covered in router test                                                                                                     |
 | 5  | `async: true` where safe                         |   ✓    | Router integration tests run async                                                                                                                 |
@@ -429,7 +429,7 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 | 1  | Input type validation at API boundary      |   ✓    | Router checks `is_integer(a) and is_integer(b)` before calling service                                                                                           |
 | 2  | No SQL injection surface                   |   ✓    | No database; not applicable                                                                                                                                      |
 | 3  | No command injection surface               |   ✓    | No shell calls from user input                                                                                                                                   |
-| 4  | Sobelow static security scan               |   ✗    | Not in deps; first PoC includes it                                                                                                                               |
+| 4  | Sobelow static security scan               |   ✓    | Added to deps (`~> 0.13`, dev/test only); `.sobelow-conf` committed with router path and one documented false-positive suppression                                                                                                                        |
 | 5  | Dependency vulnerability audit (mix_audit) |   ✗    | Not in deps; first PoC includes it                                                                                                                               |
 | 6  | Rate limiting                              |   ✗    | None; a single client can flood the service                                                                                                                      |
 | 7  | Authentication / authorisation             |   ✗    | All endpoints public                                                                                                                                             |
@@ -464,7 +464,7 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 | 4 | No secrets in `config/*.exs` files                                |   ✓    | All sensitive values delegated to env vars               |
 | 5 | `Application.fetch_env!/2` to read app config                     |   ✓    | Used in `Application.start/2`                            |
 | 6 | `Config.Reader` / `Config.Provider` for file-based runtime config |   ✗    | Not implemented; env vars only                           |
-| 7 | `.gitignore` excludes `config/local.exs` and secrets              |   ~    | `.gitignore` present but `config/local.exs` is committed |
+| 7 | `.gitignore` excludes `config/local.exs` and secrets              |   ✓    | `config/local.exs` is correctly committed — it contains no secrets, only `import_config "dev.exs"` |
 
 ---
 
@@ -479,7 +479,7 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 | 5 | No `IO.inspect` / `IO.puts` in library code |   ✓    | Only in `CalculatorCli.Main.main/1` (intentional CLI output)                     |
 | 6 | No unused variables or aliases              |   ✓    | Clean compile with `--warnings-as-errors`                                        |
 | 7 | Module naming follows Elixir conventions    |   ✓    | `CalculatorApp`, `CalculatorRest`, `CalculatorCli`, `Math` — consistent prefixes |
-| 8 | File names match module names               |   ✓    | `calculator_rest/router.ex` → `CalculatorRest.Router`                            |
+| 8 | File names match module names               |   ✓    | `calculator_rest/router.ex` → `SetmyInfo.CalculatorRest.Router`                            |
 
 ---
 
@@ -503,7 +503,7 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 2. **405 Method Not Allowed** — one extra `match` clause; required by HTTP spec.
 3. **CORS headers** — one Plug; required for any browser app on a different origin.
 4. **`servers` in OpenAPI spec** — one field; required for Swagger UI to work against non-default origins.
-5. **Sobelow + mix_audit** — two dev deps; already in first PoC.
+5. ~~**Sobelow**~~ — done (dep added, `.sobelow-conf` committed). `mix_audit` still missing.
 6. **`operationId` in OpenAPI** — one string per operation; required for client code generation.
 7. **Real E2E test** — test that starts the HTTP server and calls it with `:httpc` or `Req`.
 8. **`Plug.Telemetry`** — one plug; enables duration metrics for every request.
@@ -548,35 +548,32 @@ my_app/                        ← project root
 
 #### PoC/second actual layout vs standard
 
-| Path                                           | Status | Issue                                                                                                                                                              |
-|------------------------------------------------|:------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `config/config.exs`                            |   ✓    | Correct                                                                                                                                                            |
-| `config/dev.exs`, `test.exs`, `runtime.exs`    |   ✓    | Correct                                                                                                                                                            |
-| `config/local.exs`                             |   ~    | Custom env is fine; but this file is **committed** to git — user-local overrides belong in `.gitignore`                                                            |
-| `config/live.exs`                              |   ~    | Custom env for production-style runs; not a Mix built-in env name — `prod` is the universal convention                                                             |
-| `lib/calculator_app/`                          |   ✓    | Matches OTP app name `:calculator_app`                                                                                                                             |
-| `lib/calculator_rest/`                         |   ~    | Phoenix-style web/non-web split is accepted; but the app name prefix is missing (`CalculatorApp.Rest` would be conventional)                                       |
-| `lib/calculator_cli/`                          |   ~    | Same — `CalculatorApp.CLI` would keep everything under one root namespace                                                                                          |
-| `lib/math/`                                    |   ✗    | `Math` has no app-name prefix; convention is `lib/calculator_app/math/` → `CalculatorApp.Math`                                                                     |
-| `lib/mix/tasks/`                               |   ✓    | Correct location for custom Mix tasks                                                                                                                              |
-| `test/unit/`, `test/integration/`, `test/e2e/` |   ~    | Intentional separation is useful; but it does **not** mirror `lib/` — standard is `test/calculator_rest/router_test.exs` mirroring `lib/calculator_rest/router.ex` |
-| `test/test_helper.exs`                         |   ✓    | Correct                                                                                                                                                            |
-| `web-app/`                                     |   ✗    | Non-standard directory name and location; Elixir convention is `priv/static/` for static assets served by Plug.Static                                              |
-| `priv/`                                        |   ✗    | Missing entirely; should exist for static assets and future migrations                                                                                             |
-| `scripts/`                                     |   ✓    | De facto standard across Elixir/Erlang projects                                                                                                                    |
-| `docs/`                                        |   ✗    | Generated output committed to git; `.gitignore` lists it but the directory is tracked — generated artefacts must not be committed                                  |
-| `log/calculator_app.log`                       |   ✗    | Runtime log committed to git; `.gitignore` lists `log` but file was committed                                                                                      |
-| `calculator_app` (binary)                      |   ✗    | Escript build artefact committed; `.gitignore` lists it but it was committed                                                                                       |
-| `.formatter.exs`                               |   ✓    | Correct                                                                                                                                                            |
-| `.editorconfig`                                |   ✓    | Correct                                                                                                                                                            |
-| `.gitignore`                                   |   ~    | Correct entries present but artefacts have slipped into git anyway                                                                                                 |
-| `coveralls.json`                               |   ✓    | Standard location for ExCoveralls config                                                                                                                           |
-| `CHANGELOG.md`                                 |   ✓    | Present — Keep a Changelog 1.1.0 format, versions from 2.0.0                                                                                                       |
-| `LICENSE`                                      |   ✓    | Present — MIT 2026 Imre Tabur                                                                                                                                      |
-| `.credo.exs`                                   |   ✗    | Missing — Credo dep is added but no config file; project-specific rules and strictness cannot be pinned                                                            |
-| `.sobelow-conf`                                |   ✗    | Missing — needed when Sobelow is added; first PoC has this file                                                                                                    |
-
----
+| Path                                           | Status | Issue                                                                                                                                                                                                                                                      |
+|------------------------------------------------|:------:|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `config/config.exs`                            |   ✓    | Correct                                                                                                                                                                                                                                                    |
+| `config/dev.exs`, `test.exs`, `runtime.exs`    |   ✓    | Correct                                                                                                                                                                                                                                                    |
+| `config/local.exs`                             |   ✓    | Committed correctly — contains only `import_config "dev.exs"`, no secrets or machine-specific values; belongs in git alongside `dev.exs` and `test.exs`                                                                                                   |
+| `config/live.exs`                              |   ✓    | `live` is the deliberate internal standard for this project; `:prod` is the community convention but not required — any env name works in Mix                                                                                                              |
+| `lib/setmy_info/calculator_app/`               |   ✓    | `SetmyInfo.CalculatorApp.*` — matches `SetmyInfo.*` root namespace                                                                                                                                                                                         |
+| `lib/setmy_info/calculator_rest/`              |   ✓    | `SetmyInfo.CalculatorRest.*` — REST layer under shared org namespace                                                                                                                                                                                       |
+| `lib/setmy_info/calculator_cli/`               |   ✓    | `SetmyInfo.CalculatorCli.*` — CLI layer under shared org namespace                                                                                                                                                                                         |
+| `lib/setmy_info/math/`                         |   ~    | `SetmyInfo.Math.*` — standalone namespace correct for extractable library; `MathService` sub-module is still redundant (see module naming table)                                                                                                           |
+| `lib/mix/tasks/`                               |   ✓    | Correct location for custom Mix tasks                                                                                                                                                                                                                      |
+| `test/unit/`, `test/integration/`, `test/e2e/` |   ~    | Intentional separation is useful; but it does **not** mirror `lib/` — standard is `test/setmy_info/calculator_rest/router_test.exs` mirroring `lib/setmy_info/calculator_rest/router.ex`                                                                   |
+| `test/test_helper.exs`                         |   ✓    | Correct                                                                                                                                                                                                                                                    |
+| `priv/static/`                                 |   ✓    | Moved from `web-app/`; router uses `{:calculator_app, "priv/static"}` and `:code.priv_dir/1` — correct for Mix releases                                                                                                                                   |
+| `scripts/`                                     |   ✓    | De facto standard across Elixir/Erlang projects                                                                                                                                                                                                            |
+| `docs/`                                        |   ✓    | Exists on disk (generated by `mix docs`) but **not tracked by git** — `.gitignore` entry works correctly                                                                                                                                                   |
+| `log/calculator_app.log`                       |   ✓    | Exists on disk (written at runtime) but **not tracked by git** — `.gitignore` entry works correctly                                                                                                                                                        |
+| `calculator_app` (binary)                      |   ✓    | Exists on disk (built by `mix escript.build`) but **not tracked by git** — `.gitignore` entry works correctly                                                                                                                                              |
+| `.formatter.exs`                               |   ✓    | Correct                                                                                                                                                                                                                                                    |
+| `.editorconfig`                                |   ✓    | Correct                                                                                                                                                                                                                                                    |
+| `.gitignore`                                   |   ✓    | All generated artefacts (`docs/`, `log/`, `_build/`, `deps/`, `calculator_app` binary) are listed and correctly excluded — none are tracked by git                                                                                                         |
+| `coveralls.json`                               |   ✓    | Standard location for ExCoveralls config                                                                                                                                                                                                                   |
+| `CHANGELOG.md`                                 |   ✓    | Present — Keep a Changelog 1.1.0 format, versions from 2.0.0                                                                                                                                                                                               |
+| `LICENSE`                                      |   ✓    | Present — MIT 2026 Imre Tabur                                                                                                                                                                                                                              |
+| `.credo.exs`                                   |   ✓    | Generated with `mix credo gen.config`; rules and strictness are now pinned for all contributors                                                                                                                                                            |
+| `.sobelow-conf`                                |   ✓    | Created; router path set to `lib/setmy_info/calculator_rest/router.ex`; one false positive (`Traversal.FileModule` on config-driven log dir) documented and suppressed                                                                                     |
 
 ### Elixir official standards
 
@@ -584,14 +581,14 @@ my_app/                        ← project root
 
 Elixir requires the file path under `lib/` to match the module name in snake_case.
 
-| Module                       | File                                 | Status | Note                                                            |
-|------------------------------|--------------------------------------|:------:|-----------------------------------------------------------------|
-| `CalculatorApp.Application`  | `lib/calculator_app/application.ex`  |   ✓    |                                                                 |
-| `CalculatorRest.Router`      | `lib/calculator_rest/router.ex`      |   ✓    |                                                                 |
-| `CalculatorCli.Main`         | `lib/calculator_cli/main.ex`         |   ✓    |                                                                 |
-| `CalculatorCli.Models.Input` | `lib/calculator_cli/models/input.ex` |   ✓    | Path matches, but `Models` is a Java-ism (see de facto section) |
-| `Math.MathService`           | `lib/math/math_service.ex`           |   ~    | Path matches but `Math` has no app-name prefix                  |
-| `Mix.Tasks.Test.Unit`        | `lib/mix/tasks/test.unit.ex`         |   ✓    | Correct Mix task naming                                         |
+| Module                       | File                                 | Status | Note                                                                                                                                                                                      |
+|------------------------------|--------------------------------------|:------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `SetmyInfo.CalculatorApp.Application`  | `lib/setmy_info/calculator_app/application.ex`         |   ✓    |                                                                                 |
+| `SetmyInfo.CalculatorRest.Router`      | `lib/setmy_info/calculator_rest/router.ex`             |   ✓    |                                                                                 |
+| `SetmyInfo.CalculatorCli.Main`         | `lib/setmy_info/calculator_cli/main.ex`                |   ✓    |                                                                                 |
+| `SetmyInfo.CalculatorCli.Models.Input` | `lib/setmy_info/calculator_cli/models/input.ex`        |   ~    | Path matches; `Models` is a Java-ism — prefer `SetmyInfo.CalculatorCli.Input`  |
+| `SetmyInfo.Math.MathService`           | `lib/setmy_info/math/math_service.ex`                  |   ~    | Namespace correct for extractable library; `MathService` sub-module redundant — should be `SetmyInfo.Math` in `lib/setmy_info/math.ex` |
+| `Mix.Tasks.Test.Unit`        | `lib/mix/tasks/test.unit.ex`         |   ✓    | Correct Mix task naming                                                                                                                                                                   |
 
 #### `mix.exs` required and recommended fields
 
@@ -600,7 +597,7 @@ Elixir requires the file path under `lib/` to match the module name in snake_cas
 | `app:`                                |   ✓    | `:calculator_app`                                                                                                                                                                                |
 | `version:` (semver)                   |   ✓    | `"2.0.0"`                                                                                                                                                                                        |
 | `elixir:` constraint                  |   ✓    | `"~> 1.18"`                                                                                                                                                                                      |
-| `start_permanent: Mix.env() == :prod` |   ✗    | Not present; when the supervisor crashes in production the VM should exit — `start_permanent: Mix.env() == :live` is used instead, which works but departs from the universal `:prod` convention |
+| `start_permanent: Mix.env() == :live` |   ✓    | Present — VM exits when root supervisor crashes in `live` env                                                                                                                                    |
 | `description:`                        |   ✗    | Missing — required for Hex publishing                                                                                                                                                            |
 | `package:`                            |   ✗    | Missing — required for Hex publishing                                                                                                                                                            |
 | `deps: deps()`                        |   ✓    |                                                                                                                                                                                                  |
@@ -615,9 +612,9 @@ Elixir requires the file path under `lib/` to match the module name in snake_cas
 | `@moduledoc false` on internal modules |   ~    | Mix task helper functions use `@doc false` but no module uses `@moduledoc false`                                                                                                                                              |
 | `@doc` on every public function        |   ~    | `MathService` fully documented; Router private helpers have `@doc false`; Mix task `run/1` functions lack `@doc` in most tasks                                                                                                |
 | `@spec` on every public function       |   ~    | Only `MathService.add/2` has `@spec`; all Router, Application, and task functions lack specs                                                                                                                                  |
-| `@type t()` for struct types           |   ✗    | `CalculatorCli.Models.Input` defines `defstruct` but no `@type t()`                                                                                                                                                           |
+| `@type t()` for struct types           |   ✓    | `SetmyInfo.CalculatorCli.Models.Input` now has `@type t() :: %__MODULE__{a: integer(), b: integer()}`                                                                                                                                  |
 | `@impl true` on behaviour callbacks    |   ~    | `Application.start/2` has `@impl true`; Mix task `run/1` is missing `@impl Mix.Task` in `Server`, `Rest.Server`, `Test.Unit`, `Test.Integration`, `Test.E2e`, `Coveralls.Html`, `Credo.Report`, `Deps.Audit`, `Docs.Generate` |
-| Aliases ordered alphabetically         |   ~    | Router uses multiple aliases but they are not sorted                                                                                                                                                                          |
+| Aliases ordered alphabetically         |   ✓    | `SetmyInfo.CalculatorRest.Swagger` before `SetmyInfo.Math.MathService` — C before M                                                                                                                                          |
 
 #### Elixir data conventions
 
@@ -644,31 +641,33 @@ lib/my_app/          ← business logic, contexts, schemas (no web coupling)
 lib/my_app_web/      ← HTTP layer: controllers, routers, views, live views
 ```
 
-| Convention                     | PoC/second                   | Gap                                                                                                                   |
-|--------------------------------|------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| Business logic under `MyApp.*` | `Math.MathService`           | `Math` has no app prefix — should be `CalculatorApp.Math`                                                             |
-| HTTP layer under `MyAppWeb.*`  | `CalculatorRest.*`           | Acceptable split; `CalculatorApp.Web` or `CalculatorAppWeb` would be more standard                                    |
-| CLI layer under `MyApp.CLI.*`  | `CalculatorCli.*`            | Acceptable; `CalculatorApp.CLI` would keep one root                                                                   |
-| No `Models` namespace          | `CalculatorCli.Models.Input` | `Models` is a Rails/Java-ism; Elixir convention is `CalculatorCli.Input` or `CalculatorApp.Input`                     |
-| No `Service` suffix            | `Math.MathService`           | `Service` suffix is a Java-ism; Elixir convention is a plain context name: `CalculatorApp.Math` with `add/2` directly |
+| Convention                                                | PoC/second                             | Gap                                                                                                                                                                                       |
+|-----------------------------------------------------------|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `SetmyInfo.*` root namespace for all modules              | ✓ all modules                          | Done — matches Java `info.setmy.*` reverse-domain convention                                                                                                                              |
+| Extractable library: own namespace, no app coupling       | `SetmyInfo.Math.MathService`           | Namespace correct; `MathService` sub-module still redundant — tracked as TODO in `@moduledoc`                                                                                             |
+| HTTP layer namespaced clearly                             | `SetmyInfo.CalculatorRest.*`           | ✓ Acceptable — `SetmyInfo.CalculatorRest` is clear and consistent                                                                                                                        |
+| CLI layer namespaced clearly                              | `SetmyInfo.CalculatorCli.*`            | ✓ Acceptable — `SetmyInfo.CalculatorCli` is clear and consistent                                                                                                                         |
+| No `Models` namespace                                     | `SetmyInfo.CalculatorCli.Models.Input` | `Models` is a Rails/Java-ism; prefer `SetmyInfo.CalculatorCli.Input`                                                                                                                     |
+| No `Service` suffix                                       | `SetmyInfo.Math.MathService`           | `Service` is a Java-ism; callers write `SetmyInfo.Math.add/2`, not `SetmyInfo.Math.MathService.add/2`                                                                                    |
 
 #### Static asset location
 
 | Convention                                                                   | PoC/second     | Gap                                                                                                                                       |
 |------------------------------------------------------------------------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| `priv/static/` for Plug.Static assets (Phoenix / Plug standard)              | `web-app/`     | Non-standard directory; `Plug.Static, at: "/", from: "web-app"` works but breaks the convention that `priv/` holds runtime-embedded files |
-| Assets served from `priv/` are accessible in releases via `:code.priv_dir/1` | Not applicable | `web-app/` is not inside `priv/` and will not be packaged correctly in a Mix release                                                      |
+| `priv/static/` for Plug.Static assets (Phoenix / Plug standard)              | `priv/static/` | ✓ Fixed — assets moved from `web-app/`; served via `{:calculator_app, "priv/static"}` |
+| Assets served from `priv/` are accessible in releases via `:code.priv_dir/1` | `priv/static/` | ✓ Fixed — router uses `:code.priv_dir(:calculator_app)` for the index path               |
 
 #### Context module pattern (Elixir/Phoenix de facto)
 
 Context modules are the Elixir equivalent of a service layer — they expose a clean
 public API for a bounded domain and hide internal details.
 
-| Convention                                              | PoC/second         | Gap                                                                     |
-|---------------------------------------------------------|--------------------|-------------------------------------------------------------------------|
-| Context module name matches domain, no `Service` suffix | `Math.MathService` | Should be `CalculatorApp.Math` with `def add/2` directly in the context |
-| Context hides schema / repo details                     | N/A yet            | Will matter when Ecto is added                                          |
-| One context per bounded domain                          | Implicit           | `Math`, `CLI`, `REST` are three separate domains — correct split        |
+| Convention                                             | PoC/second         | Gap                                                                                                                                                                                          |
+|--------------------------------------------------------|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Extractable library: own root namespace, no app prefix | `SetmyInfo.Math.MathService` | `Math` namespace is correct; but the module should be `Math` itself (in `lib/math.ex`), not a sub-module `SetmyInfo.Math.MathService` in `lib/math/math_service.ex` — the sub-module name adds nothing |
+| No `Service` suffix                                    | `SetmyInfo.Math.MathService` | `Service` is a Java-ism; callers write `Math.add/2`, not `SetmyInfo.Math.MathService.add/2`                                                                                                            |
+| Context hides schema / repo details                    | N/A yet            | Will matter when Ecto is added                                                                                                                                                               |
+| One context per bounded domain                         | Implicit           | `Math`, `CLI`, `REST` are three separate domains — correct split                                                                                                                             |
 
 #### Mix task conventions (de facto)
 
@@ -676,7 +675,7 @@ public API for a bounded domain and hide internal details.
 |-----------------------------------------------------------------------------|:------:|----------------------------------------------------------------------------------------------------------------------------------------------|
 | `@shortdoc` one-liner on every task                                         |   ✓    | All tasks have it                                                                                                                            |
 | `@moduledoc` explains options and examples                                  |   ✓    | Most tasks have it                                                                                                                           |
-| `@impl Mix.Task` on `run/1`                                                 |   ✗    | Missing on 8 of 9 tasks — only `Mix.Tasks.Quality` has it                                                                                    |
+| `@impl Mix.Task` on `run/1`                                                 |   ✓    | Added to all 11 tasks                                                                                                                         |
 | Tasks that wrap `mix test` delegate via `Mix.Task.run/2` not `System.cmd/3` |   ~    | `Test.Unit/Integration/E2e` use `Mix.Task.run` (correct); `Quality` uses `System.cmd` with an explicit env override (acceptable but heavier) |
 | Deprecated tasks warn and delegate                                          |   ✓    | `Rest.Server` prints deprecation notice and delegates to `Server`                                                                            |
 | Tasks in `lib/mix/tasks/` not in `lib/<app>/`                               |   ✓    | Correct                                                                                                                                      |
@@ -687,11 +686,11 @@ public API for a bounded domain and hide internal details.
 |------------------------------------|:------:|----------------------------------------------------------------------------------|
 | `.formatter.exs`                   |   ✓    | Present and covers all Elixir paths                                              |
 | `.editorconfig`                    |   ✓    | Present with Elixir-correct indentation                                          |
-| `.credo.exs`                       |   ✗    | Missing — Credo strictness is unpinned; another developer gets different results |
+| `.credo.exs`                       |   ✓    | Generated with `mix credo gen.config`; rules and strictness pinned                |
 | `mix.lock` committed               |   ✓    | Correct — reproducible builds                                                    |
 | `CHANGELOG.md`                     |   ✓    | Present — Keep a Changelog 1.1.0 format, versions from 2.0.0                     |
 | `LICENSE`                          |   ✓    | Present — MIT 2026 Imre Tabur                                                    |
-| `.sobelow-conf`                    |   ✗    | Will be needed when Sobelow is added                                             |
+| `.sobelow-conf`                    |   ✓    | Created; router and suppressed false positive documented                          |
 | `coveralls.json`                   |   ✓    | Present; `output_dir: "docs/coverage"` is configured                             |
 | `mix_audit` in deps                |   ✗    | Not present; first PoC includes it                                               |
 | CI workflow (`.github/workflows/`) |   ✗    | Missing — first PoC has `ci.yml`; second PoC has no CI definition                |
@@ -711,18 +710,17 @@ public API for a bounded domain and hide internal details.
 
 **Top structural gaps by impact:**
 
-1. **`lib/math/math_service.ex` → rename to `lib/calculator_app/math.ex`** — aligns with context pattern and app
-   namespace; `MathService` suffix goes away.
-2. **`web-app/` → move to `priv/static/`** — required for Mix releases to package assets correctly.
-3. **`@impl Mix.Task` on all task `run/1`** — one line per task; prevents "undefined behaviour callback" warnings.
-4. **`.credo.exs`** — pin Credo checks and strictness so all contributors get identical output.
-5. **`start_permanent: Mix.env() == :prod`** — one field in `mix.exs`; ensures VM shuts down if the root supervisor
-   crashes in production.
-6. **`config/local.exs` in `.gitignore`** — remove from git; add to `.gitignore`.
+1. **`SetmyInfo.Math.MathService` → collapse to `SetmyInfo.Math` in `lib/setmy_info/math.ex`** — `MathService` sub-module is redundant; tracked as TODO in `@moduledoc`.
+2. ~~**`web-app/` → move to `priv/static/`**~~ — done.
+3. ~~**`@impl Mix.Task` on all task `run/1`**~~ — done (all 11 tasks).
+4. ~~**`.credo.exs`**~~ — done.
+5. ~~**`start_permanent: Mix.env() == :live`**~~ — done.
+6. ~~**`config/local.exs` in `.gitignore`**~~ — not needed; file contains no secrets.
 7. **`CI workflow`** — `.github/workflows/ci.yml` mirroring first PoC.
 8. ~~**`CHANGELOG.md` and `LICENSE`**~~ — done.
-9. **`CalculatorCli.Models.Input` → `CalculatorCli.Input`** — remove `Models` namespace layer.
-10. **`@spec` and `@type t()` on all public modules** — improve dialyzer coverage.
+9. **`SetmyInfo.CalculatorCli.Models.Input` → `SetmyInfo.CalculatorCli.Input`** — remove `Models` namespace layer.
+10. ~~**`@type t()` on struct types**~~ — done (`SetmyInfo.CalculatorCli.Models.Input`).
+11. **`@spec` on all public module functions** — Router, Application, and task functions still lack specs.
 
 ## Implementation priority
 

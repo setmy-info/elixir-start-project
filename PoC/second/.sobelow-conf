@@ -1,0 +1,13 @@
+[
+  verbose: false,
+  quiet: false,
+  exit_on_vuln: false,
+  skip: false,
+  router: "lib/setmy_info/calculator_rest/router.ex",
+  # Traversal.FileModule fires on File.mkdir_p! in Application.ensure_log_directory!/0.
+  # The path comes from Application.fetch_env!(:calculator_app, :log_dir), which is set
+  # in config/runtime.exs from the CALCULATOR_LOG_DIR env var with a safe default of "log".
+  # It is not derived from user input, so this is a false positive.
+  ignore: ["Traversal.FileModule"],
+  ignore_files: []
+]

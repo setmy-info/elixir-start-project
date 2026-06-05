@@ -11,6 +11,7 @@ defmodule Mix.Tasks.Credo.Report do
   @doc """
   Executes Credo and writes the report file.
   """
+  @impl Mix.Task
   def run(args) do
     File.mkdir_p!(Path.expand("docs/quality", File.cwd!()))
 

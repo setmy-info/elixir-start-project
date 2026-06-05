@@ -17,9 +17,11 @@ defmodule CalculatorApp.MixProject do
       app: :calculator_app,
       version: "2.0.0",
       elixir: "~> 1.18",
+      start_permanent: Mix.env() == :live,
       elixirc_paths: elixirc_paths(Mix.env()),
-      escript: [main_module: CalculatorCli.Main],
+      escript: [main_module: SetmyInfo.CalculatorCli.Main],
       deps: deps(),
+      aliases: aliases(),
       cli: cli(),
       docs: docs(),
       test_coverage: [tool: ExCoveralls]
@@ -33,6 +35,7 @@ defmodule CalculatorApp.MixProject do
       {:absinthe, "~> 1.7"},
       {:absinthe_plug, "~> 1.5"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.34", runtime: false},
       {:excoveralls, "~> 0.18", runtime: false},
       {:logger_backends, "~> 1.0"},
@@ -48,6 +51,9 @@ defmodule CalculatorApp.MixProject do
           {:credo, :dev},
           {:"deps.audit", :dev},
           {:quality, :dev},
+          {:validate, :dev},
+          {:"deps.check_versions", :dev},
+          {:"deps.upgrade_versions", :dev},
           {:server, :local},
           {:"test.unit", :test},
           {:"test.integration", :test},
@@ -70,12 +76,18 @@ defmodule CalculatorApp.MixProject do
     ]
   end
 
+  defp aliases do
+    [
+      validate: ["compile --warnings-as-errors", "format --check-formatted"]
+    ]
+  end
+
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   def application do
     [
-      mod: {CalculatorApp.Application, []},
+      mod: {SetmyInfo.CalculatorApp.Application, []},
       extra_applications: [:logger]
     ]
   end

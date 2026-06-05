@@ -11,6 +11,7 @@ defmodule Mix.Tasks.Deps.Audit do
   @doc """
   Executes the dependency audit and writes the report file.
   """
+  @impl Mix.Task
   def run(args) do
     File.mkdir_p!(Path.expand("docs/quality", File.cwd!()))
 

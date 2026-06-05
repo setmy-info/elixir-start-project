@@ -16,6 +16,7 @@ defmodule Mix.Tasks.Rest.Server do
   @doc """
   Delegates to `mix server` for backwards compatibility.
   """
+  @impl Mix.Task
   def run(args) do
     Mix.shell().info("mix rest.server is deprecated; use mix server instead.")
     Mix.Task.run("server", args)

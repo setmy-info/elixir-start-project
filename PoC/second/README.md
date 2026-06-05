@@ -6,22 +6,22 @@ It also includes a small REST layer for addition.
 ## Project structure
 
 - `mix.exs` - project configuration, app metadata, and `escript` build setup
-- `lib\calculator_cli\main.ex` - CLI entry point
-- `lib\calculator_rest\router.ex` - REST endpoint for addition
-- `lib\calculator_cli\models\input.ex` - input struct used by the CLI
-- `lib\math\math_service.ex` - math logic
+- `lib\setmy_info\calculator_cli\main.ex` - CLI entry point (`SetmyInfo.CalculatorCli.Main`)
+- `lib\setmy_info\calculator_rest\router.ex` - REST endpoint for addition (`SetmyInfo.CalculatorRest.Router`)
+- `lib\setmy_info\calculator_cli\models\input.ex` - input struct used by the CLI (`SetmyInfo.CalculatorCli.Models.Input`)
+- `lib\setmy_info\math\math_service.ex` - math logic (`SetmyInfo.Math.MathService`)
 - `lib\mix\tasks\server.ex` - recommended Mix task to start the shared web server
 - `lib\mix\tasks\rest.server.ex` - backwards-compatible deprecated alias for the old server task name
-- `lib\calculator_app\application.ex` - application supervisor that starts the shared HTTP server when enabled
-- `lib\calculator_rest\swagger.ex` - Swagger/OpenAPI document and Swagger UI support for the REST API
+- `lib\setmy_info\calculator_app\application.ex` - application supervisor (`SetmyInfo.CalculatorApp.Application`)
+- `lib\setmy_info\calculator_rest\swagger.ex` - Swagger/OpenAPI document and Swagger UI support (`SetmyInfo.CalculatorRest.Swagger`)
 - `scripts\calculator_app.cmd` - Windows launcher for the built CLI
 - `scripts\calculator_app.sh` - POSIX shell launcher for the built CLI
 - `scripts\server.cmd` - Windows launcher for the shared web server
 - `scripts\server.sh` - POSIX shell launcher for the shared web server
-- `test\unit\math\math_service_test.exs` - unit tests for the math service
-- `test\integration\calculator_cli\main_test.exs` - integration tests for CLI behavior
-- `test\integration\calculator_rest\router_test.exs` - integration tests for the REST endpoint
-- `test\e2e\calculator_cli\main_test.exs` - end-to-end test suite for CLI flow
+- `test\unit\setmy_info\math\math_service_test.exs` - unit tests for the math service
+- `test\integration\setmy_info\calculator_cli\main_test.exs` - integration tests for CLI behavior
+- `test\integration\setmy_info\calculator_rest\router_test.exs` - integration tests for the REST endpoint
+- `test\e2e\setmy_info\calculator_cli\main_test.exs` - end-to-end test suite for CLI flow
 - `test\test_helper.exs` - starts `ExUnit`
 
 ## Setup after cloning
@@ -69,7 +69,7 @@ mix test .\test\unit
 Then run the CLI again to verify the current behavior:
 
 ```powershell
-mix run -e "CalculatorCli.Main.main([\"2\", \"3\"])"
+mix run -e "SetmyInfo.CalculatorCli.Main.main([\"2\", \"3\"])"
 ```
 
 If you want to refresh the built CLI artifact after source changes, rebuild the `escript`:
@@ -86,7 +86,7 @@ is to rerun `mix compile` during development and `mix escript.build` when you wa
 You can run the app directly with Mix:
 
 ```powershell
-mix run -e "CalculatorCli.Main.main([\"2\", \"3\"])"
+mix run -e "SetmyInfo.CalculatorCli.Main.main([\"2\", \"3\"])"
 ```
 
 Expected output:
@@ -428,17 +428,22 @@ pages/endpoints to inspect.
 set +e
 mix deps.get
 mix compile
+mix validate
 mix test
 mix test.unit
 mix test.integration
 mix test.e2e
 mix quality
+mix deps.check_versions
 mix docs
 mix coveralls.html
 mix credo.report
+mix sobelow --config
 mix deps.audit
 mix docs.generate
 mix escript.build
+./scripts/hello.exs | tee /tmp/calculator-hello.txt
+grep -q 'Hello, World!' /tmp/calculator-hello.txt
 ./scripts/calculator_app.sh 2 3 | tee /tmp/calculator-cli-valid.txt
 grep -q 'Result: 5' /tmp/calculator-cli-valid.txt
 ./scripts/calculator_app.sh 2 | tee /tmp/calculator-cli-invalid.txt
@@ -466,7 +471,11 @@ wait $SERVER_PID 2>/dev/null
 
 Things to verify while going through the QA flow:
 
-- `mix quality` completes successfully so the combined formatting, compile, test, Credo, and dependency-audit workflow stays covered.
+- `mix validate` passes — formatting check and compile with warnings-as-errors both succeed.
+- `mix quality` completes successfully — formatting, compile, full test suite, Credo report, and dependency audit.
+- `mix deps.check_versions` prints the version table and exits cleanly when all deps are current.
+- `mix sobelow --config` completes with no findings.
+- `./scripts/hello.exs` prints `Hello, World!` and exits with code 0.
 - The built CLI runs through `scripts/calculator_app.sh 2 3` and prints `Result: 5`.
 - The built CLI invalid-argument path runs through `scripts/calculator_app.sh 2` and prints `Usage: calculator_app <a> <b>`.
 - `http://localhost:4000/` serves the web UI.
@@ -516,7 +525,7 @@ For this project, if you do not set anything manually, plain commands like these
 ```powershell
 mix deps.get
 mix compile
-mix run -e "CalculatorCli.Main.main([\"2\", \"3\"])"
+mix run -e "SetmyInfo.CalculatorCli.Main.main([\"2\", \"3\"])"
 mix escript.build
 ```
 
@@ -542,7 +551,7 @@ If you want to run other commands explicitly in the `local` profile on Windows P
 ```powershell
 $env:MIX_ENV = "local"
 mix compile
-mix run -e "CalculatorCli.Main.main([\"2\", \"3\"])"
+mix run -e "SetmyInfo.CalculatorCli.Main.main([\"2\", \"3\"])"
 ```
 
 If you want a live deployment-style build, use `live` as the project standard profile name:
@@ -582,3 +591,110 @@ Keep helper files for other environments or shells out of the project root when 
 - Keep Elixir source in `lib\`
 - Keep tests in `test\`
 - Leave the root mainly for Mix project files and generated build output such as `calculator_app`
+
+---
+
+## Guidelines
+
+### Namespace convention
+
+All modules use the `SetmyInfo.*` root namespace — the Elixir equivalent of the Java
+reverse-domain prefix `info.setmy.*`.
+
+| Java | Elixir |
+|------|--------|
+| `info.setmy.calculatorapp.Application` | `SetmyInfo.CalculatorApp.Application` |
+| `info.setmy.calculatorrest.Router` | `SetmyInfo.CalculatorRest.Router` |
+| `info.setmy.calculatorrest.Schema` | `SetmyInfo.CalculatorRest.Schema` |
+| `info.setmy.math.MathService` | `SetmyInfo.Math.MathService` |
+
+Mix tasks are the exception — they must live under `Mix.Tasks.*` to be discoverable
+by the Mix CLI (`Mix.Tasks.Server`, `Mix.Tasks.Test.Unit`, etc.).
+
+### File and directory layout
+
+Every module name maps directly to its file path under `lib/`:
+
+- `SetmyInfo.CalculatorApp.Application` → `lib/setmy_info/calculator_app/application.ex`
+- `SetmyInfo.CalculatorRest.Router` → `lib/setmy_info/calculator_rest/router.ex`
+- `SetmyInfo.Math.MathService` → `lib/setmy_info/math/math_service.ex`
+- `Mix.Tasks.Server` → `lib/mix/tasks/server.ex`
+
+Test files mirror the source path under `test/unit/`, `test/integration/`, or `test/e2e/`:
+
+- `test/unit/setmy_info/math/math_service_test.exs`
+- `test/integration/setmy_info/calculator_rest/router_test.exs`
+
+Static web assets live in `priv/static/` so they are packaged correctly by Mix releases
+and accessible via `:code.priv_dir(:calculator_app)` at runtime.
+
+### Module naming
+
+- CamelCase module names, snake_case file names — enforced by the Elixir compiler.
+- No `Service` suffix — a module named `SetmyInfo.Math` exposes `add/2` directly.
+  `MathService` is a Java-ism; the module name already implies the role.
+  `SetmyInfo.Math.MathService` is kept temporarily with a TODO in `@moduledoc`
+  until the library is extracted into its own Hex package as `SetmyInfo.Math`.
+- No `Models` namespace layer — prefer `SetmyInfo.CalculatorCli.Input` over
+  `SetmyInfo.CalculatorCli.Models.Input` in new code.
+
+### Elixir coding standards
+
+- `@moduledoc` on every public module; `@moduledoc false` on internal helpers.
+- `@doc` on every public function.
+- `@spec` on every public function.
+- `@impl true` on all behaviour callbacks including `Mix.Task` `run/1`.
+- `@type t()` on modules that define a struct.
+- Guard clauses (`when is_integer(a)`) at API boundaries rather than runtime checks.
+- Return `{:ok, result}` / `{:error, reason}` from fallible functions.
+- Bang (`!`) suffix on functions that raise instead of returning an error tuple.
+
+### Mix environments
+
+This project uses `live` instead of `prod` as the production-style environment name.
+This is an intentional internal standard — Mix accepts any atom as an environment name.
+
+| Environment | Purpose |
+|-------------|---------|
+| `dev` | Default Mix env for compilation and development |
+| `test` | Running the test suite (`mix test`) |
+| `local` | Local server execution (`mix server`) — aliases `dev.exs` |
+| `live` | Production-style deployment — requires `PORT` env var |
+
+### Code quality tools
+
+Run all checks before committing:
+
+```sh
+mix validate          # format check + compile --warnings-as-errors
+mix test              # full test suite
+mix credo --strict    # static analysis (config pinned in .credo.exs)
+mix sobelow --config  # security scan (config pinned in .sobelow-conf)
+mix deps.check_versions  # verify all deps are current
+mix deps.audit        # check for known vulnerabilities
+```
+
+Or run everything in one step:
+
+```sh
+mix quality
+```
+
+### Dependency management
+
+- `mix deps.check_versions` — compare all locked deps against Hex latest; exits
+  non-zero if any dep can be upgraded within existing constraints.
+- `mix deps.upgrade_versions` — update all deps within current `mix.exs`
+  constraints, then report anything still behind due to a constraint boundary.
+  After running, commit the updated `mix.lock`.
+- To upgrade past a constraint boundary (e.g. `~> 2.7` → `3.0`), edit the version
+  requirement in `mix.exs` first, then run `mix deps.upgrade_versions`.
+
+### Commit checklist
+
+1. `mix validate` passes
+2. `mix test` passes with no failures
+3. `mix credo --strict` passes
+4. `mix sobelow --config` passes
+5. `mix deps.check_versions` shows all deps up-to-date
+6. `mix.lock` committed if deps were updated
