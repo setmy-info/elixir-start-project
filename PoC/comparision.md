@@ -509,6 +509,221 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 8. **`Plug.Telemetry`** — one plug; enables duration metrics for every request.
 9. **Introspection guard in `live` env** — one Absinthe option; prevents schema disclosure.
 
+## Directory structure, Elixir standards, and de facto conventions
+
+This section compares the PoC/second layout and code against three reference points:
+
+- **Mix official** — what `mix new` produces and what the Elixir docs mandate
+- **Elixir official** — language-level conventions from the Elixir style guide and core docs
+- **De facto** — what the Elixir ecosystem (Phoenix, Ecto, Hex packages) treats as standard
+
+---
+
+### Directory and file layout
+
+#### Reference: standard single-app Mix project
+
+```
+my_app/                        ← project root
+├── config/
+│   ├── config.exs             ← shared config (mandatory)
+│   ├── dev.exs
+│   ├── test.exs
+│   └── runtime.exs            ← runtime config (read after app start)
+├── lib/
+│   ├── my_app.ex              ← optional root module
+│   └── my_app/                ← ONE top-level dir matching the OTP app name
+│       ├── application.ex
+│       └── ...
+├── priv/                      ← static assets, DB migrations, seeds (by convention)
+│   └── static/
+├── test/
+│   ├── test_helper.exs        ← mandatory
+│   └── my_app/                ← mirrors lib/ structure
+│       └── ...
+├── .formatter.exs
+├── mix.exs
+└── mix.lock
+```
+
+#### PoC/second actual layout vs standard
+
+| Path                                           | Status | Issue                                                                                                                                                              |
+|------------------------------------------------|:------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `config/config.exs`                            |   ✓    | Correct                                                                                                                                                            |
+| `config/dev.exs`, `test.exs`, `runtime.exs`    |   ✓    | Correct                                                                                                                                                            |
+| `config/local.exs`                             |   ~    | Custom env is fine; but this file is **committed** to git — user-local overrides belong in `.gitignore`                                                            |
+| `config/live.exs`                              |   ~    | Custom env for production-style runs; not a Mix built-in env name — `prod` is the universal convention                                                             |
+| `lib/calculator_app/`                          |   ✓    | Matches OTP app name `:calculator_app`                                                                                                                             |
+| `lib/calculator_rest/`                         |   ~    | Phoenix-style web/non-web split is accepted; but the app name prefix is missing (`CalculatorApp.Rest` would be conventional)                                       |
+| `lib/calculator_cli/`                          |   ~    | Same — `CalculatorApp.CLI` would keep everything under one root namespace                                                                                          |
+| `lib/math/`                                    |   ✗    | `Math` has no app-name prefix; convention is `lib/calculator_app/math/` → `CalculatorApp.Math`                                                                     |
+| `lib/mix/tasks/`                               |   ✓    | Correct location for custom Mix tasks                                                                                                                              |
+| `test/unit/`, `test/integration/`, `test/e2e/` |   ~    | Intentional separation is useful; but it does **not** mirror `lib/` — standard is `test/calculator_rest/router_test.exs` mirroring `lib/calculator_rest/router.ex` |
+| `test/test_helper.exs`                         |   ✓    | Correct                                                                                                                                                            |
+| `web-app/`                                     |   ✗    | Non-standard directory name and location; Elixir convention is `priv/static/` for static assets served by Plug.Static                                              |
+| `priv/`                                        |   ✗    | Missing entirely; should exist for static assets and future migrations                                                                                             |
+| `scripts/`                                     |   ✓    | De facto standard across Elixir/Erlang projects                                                                                                                    |
+| `docs/`                                        |   ✗    | Generated output committed to git; `.gitignore` lists it but the directory is tracked — generated artefacts must not be committed                                  |
+| `log/calculator_app.log`                       |   ✗    | Runtime log committed to git; `.gitignore` lists `log` but file was committed                                                                                      |
+| `calculator_app` (binary)                      |   ✗    | Escript build artefact committed; `.gitignore` lists it but it was committed                                                                                       |
+| `.formatter.exs`                               |   ✓    | Correct                                                                                                                                                            |
+| `.editorconfig`                                |   ✓    | Correct                                                                                                                                                            |
+| `.gitignore`                                   |   ~    | Correct entries present but artefacts have slipped into git anyway                                                                                                 |
+| `coveralls.json`                               |   ✓    | Standard location for ExCoveralls config                                                                                                                           |
+| `CHANGELOG.md`                                 |   ✓    | Present — Keep a Changelog 1.1.0 format, versions from 2.0.0                                                                                                       |
+| `LICENSE`                                      |   ✓    | Present — MIT 2026 Imre Tabur                                                                                                                                      |
+| `.credo.exs`                                   |   ✗    | Missing — Credo dep is added but no config file; project-specific rules and strictness cannot be pinned                                                            |
+| `.sobelow-conf`                                |   ✗    | Missing — needed when Sobelow is added; first PoC has this file                                                                                                    |
+
+---
+
+### Elixir official standards
+
+#### Module naming and file path matching (mandatory)
+
+Elixir requires the file path under `lib/` to match the module name in snake_case.
+
+| Module                       | File                                 | Status | Note                                                            |
+|------------------------------|--------------------------------------|:------:|-----------------------------------------------------------------|
+| `CalculatorApp.Application`  | `lib/calculator_app/application.ex`  |   ✓    |                                                                 |
+| `CalculatorRest.Router`      | `lib/calculator_rest/router.ex`      |   ✓    |                                                                 |
+| `CalculatorCli.Main`         | `lib/calculator_cli/main.ex`         |   ✓    |                                                                 |
+| `CalculatorCli.Models.Input` | `lib/calculator_cli/models/input.ex` |   ✓    | Path matches, but `Models` is a Java-ism (see de facto section) |
+| `Math.MathService`           | `lib/math/math_service.ex`           |   ~    | Path matches but `Math` has no app-name prefix                  |
+| `Mix.Tasks.Test.Unit`        | `lib/mix/tasks/test.unit.ex`         |   ✓    | Correct Mix task naming                                         |
+
+#### `mix.exs` required and recommended fields
+
+| Field                                 | Status | Note                                                                                                                                                                                             |
+|---------------------------------------|:------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `app:`                                |   ✓    | `:calculator_app`                                                                                                                                                                                |
+| `version:` (semver)                   |   ✓    | `"2.0.0"`                                                                                                                                                                                        |
+| `elixir:` constraint                  |   ✓    | `"~> 1.18"`                                                                                                                                                                                      |
+| `start_permanent: Mix.env() == :prod` |   ✗    | Not present; when the supervisor crashes in production the VM should exit — `start_permanent: Mix.env() == :live` is used instead, which works but departs from the universal `:prod` convention |
+| `description:`                        |   ✗    | Missing — required for Hex publishing                                                                                                                                                            |
+| `package:`                            |   ✗    | Missing — required for Hex publishing                                                                                                                                                            |
+| `deps: deps()`                        |   ✓    |                                                                                                                                                                                                  |
+| `docs:` configured                    |   ✓    | ExDoc output dir and main set                                                                                                                                                                    |
+| `test_coverage:` configured           |   ✓    | ExCoveralls wired                                                                                                                                                                                |
+
+#### Module attributes (official Elixir style guide)
+
+| Attribute                              | Status | Note                                                                                                                                                                                                                          |
+|----------------------------------------|:------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `@moduledoc` on every public module    |   ✓    | All modules documented                                                                                                                                                                                                        |
+| `@moduledoc false` on internal modules |   ~    | Mix task helper functions use `@doc false` but no module uses `@moduledoc false`                                                                                                                                              |
+| `@doc` on every public function        |   ~    | `MathService` fully documented; Router private helpers have `@doc false`; Mix task `run/1` functions lack `@doc` in most tasks                                                                                                |
+| `@spec` on every public function       |   ~    | Only `MathService.add/2` has `@spec`; all Router, Application, and task functions lack specs                                                                                                                                  |
+| `@type t()` for struct types           |   ✗    | `CalculatorCli.Models.Input` defines `defstruct` but no `@type t()`                                                                                                                                                           |
+| `@impl true` on behaviour callbacks    |   ~    | `Application.start/2` has `@impl true`; Mix task `run/1` is missing `@impl Mix.Task` in `Server`, `Rest.Server`, `Test.Unit`, `Test.Integration`, `Test.E2e`, `Coveralls.Html`, `Credo.Report`, `Deps.Audit`, `Docs.Generate` |
+| Aliases ordered alphabetically         |   ~    | Router uses multiple aliases but they are not sorted                                                                                                                                                                          |
+
+#### Elixir data conventions
+
+| Convention                                                        | Status | Note                                                                                              |
+|-------------------------------------------------------------------|:------:|---------------------------------------------------------------------------------------------------|
+| `{:ok, result} \| {:error, reason}` return convention             |   ✓    | Used in Router `with` chain                                                                       |
+| Pattern matching over `if`/`cond` for branching                   |   ✓    | `with`, function clauses, `case` used throughout                                                  |
+| `!`-suffix functions raise instead of returning error tuple       |   ~    | Not needed here, but `Application.ensure_log_directory!/0` correctly uses the bang convention     |
+| No bare atoms as error reasons — use descriptive atoms or structs |   ~    | Router returns `{:error, :bad_request}` implicitly via `send_bad_request` — actual atoms not used |
+| Avoid `String.to_atom/1` on user input                            |   ✓    | Not present                                                                                       |
+| No `apply/3` on user-supplied function names                      |   ✓    | Not present                                                                                       |
+
+---
+
+### De facto community standards
+
+#### Namespace conventions (Phoenix / Elixir ecosystem)
+
+The dominant de facto convention, established by Phoenix and followed by most major
+Elixir projects, is two root namespaces per app:
+
+```
+lib/my_app/          ← business logic, contexts, schemas (no web coupling)
+lib/my_app_web/      ← HTTP layer: controllers, routers, views, live views
+```
+
+| Convention                     | PoC/second                   | Gap                                                                                                                   |
+|--------------------------------|------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| Business logic under `MyApp.*` | `Math.MathService`           | `Math` has no app prefix — should be `CalculatorApp.Math`                                                             |
+| HTTP layer under `MyAppWeb.*`  | `CalculatorRest.*`           | Acceptable split; `CalculatorApp.Web` or `CalculatorAppWeb` would be more standard                                    |
+| CLI layer under `MyApp.CLI.*`  | `CalculatorCli.*`            | Acceptable; `CalculatorApp.CLI` would keep one root                                                                   |
+| No `Models` namespace          | `CalculatorCli.Models.Input` | `Models` is a Rails/Java-ism; Elixir convention is `CalculatorCli.Input` or `CalculatorApp.Input`                     |
+| No `Service` suffix            | `Math.MathService`           | `Service` suffix is a Java-ism; Elixir convention is a plain context name: `CalculatorApp.Math` with `add/2` directly |
+
+#### Static asset location
+
+| Convention                                                                   | PoC/second     | Gap                                                                                                                                       |
+|------------------------------------------------------------------------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| `priv/static/` for Plug.Static assets (Phoenix / Plug standard)              | `web-app/`     | Non-standard directory; `Plug.Static, at: "/", from: "web-app"` works but breaks the convention that `priv/` holds runtime-embedded files |
+| Assets served from `priv/` are accessible in releases via `:code.priv_dir/1` | Not applicable | `web-app/` is not inside `priv/` and will not be packaged correctly in a Mix release                                                      |
+
+#### Context module pattern (Elixir/Phoenix de facto)
+
+Context modules are the Elixir equivalent of a service layer — they expose a clean
+public API for a bounded domain and hide internal details.
+
+| Convention                                              | PoC/second         | Gap                                                                     |
+|---------------------------------------------------------|--------------------|-------------------------------------------------------------------------|
+| Context module name matches domain, no `Service` suffix | `Math.MathService` | Should be `CalculatorApp.Math` with `def add/2` directly in the context |
+| Context hides schema / repo details                     | N/A yet            | Will matter when Ecto is added                                          |
+| One context per bounded domain                          | Implicit           | `Math`, `CLI`, `REST` are three separate domains — correct split        |
+
+#### Mix task conventions (de facto)
+
+| Convention                                                                  | Status | Note                                                                                                                                         |
+|-----------------------------------------------------------------------------|:------:|----------------------------------------------------------------------------------------------------------------------------------------------|
+| `@shortdoc` one-liner on every task                                         |   ✓    | All tasks have it                                                                                                                            |
+| `@moduledoc` explains options and examples                                  |   ✓    | Most tasks have it                                                                                                                           |
+| `@impl Mix.Task` on `run/1`                                                 |   ✗    | Missing on 8 of 9 tasks — only `Mix.Tasks.Quality` has it                                                                                    |
+| Tasks that wrap `mix test` delegate via `Mix.Task.run/2` not `System.cmd/3` |   ~    | `Test.Unit/Integration/E2e` use `Mix.Task.run` (correct); `Quality` uses `System.cmd` with an explicit env override (acceptable but heavier) |
+| Deprecated tasks warn and delegate                                          |   ✓    | `Rest.Server` prints deprecation notice and delegates to `Server`                                                                            |
+| Tasks in `lib/mix/tasks/` not in `lib/<app>/`                               |   ✓    | Correct                                                                                                                                      |
+
+#### Tooling de facto checklist
+
+| Tool / file                        | Status | Note                                                                             |
+|------------------------------------|:------:|----------------------------------------------------------------------------------|
+| `.formatter.exs`                   |   ✓    | Present and covers all Elixir paths                                              |
+| `.editorconfig`                    |   ✓    | Present with Elixir-correct indentation                                          |
+| `.credo.exs`                       |   ✗    | Missing — Credo strictness is unpinned; another developer gets different results |
+| `mix.lock` committed               |   ✓    | Correct — reproducible builds                                                    |
+| `CHANGELOG.md`                     |   ✓    | Present — Keep a Changelog 1.1.0 format, versions from 2.0.0                     |
+| `LICENSE`                          |   ✓    | Present — MIT 2026 Imre Tabur                                                    |
+| `.sobelow-conf`                    |   ✗    | Will be needed when Sobelow is added                                             |
+| `coveralls.json`                   |   ✓    | Present; `output_dir: "docs/coverage"` is configured                             |
+| `mix_audit` in deps                |   ✗    | Not present; first PoC includes it                                               |
+| CI workflow (`.github/workflows/`) |   ✗    | Missing — first PoC has `ci.yml`; second PoC has no CI definition                |
+
+---
+
+### Structure gap summary
+
+| Category                                     | Compliant | Partial | Missing | Score |
+|----------------------------------------------|:---------:|:-------:|:-------:|-------|
+| Directory layout                             |     8     |    4    |    5    | 47 %  |
+| `mix.exs` fields                             |     5     |    0    |    3    | 63 %  |
+| Module attributes (`@impl`, `@spec`, `@doc`) |     3     |    4    |    2    | 44 %  |
+| Namespace conventions                        |     3     |    2    |    2    | 50 %  |
+| Mix task conventions                         |     3     |    1    |    2    | 58 %  |
+| Tooling files                                |     6     |    1    |    3    | 60 %  |
+
+**Top structural gaps by impact:**
+
+1. **`lib/math/math_service.ex` → rename to `lib/calculator_app/math.ex`** — aligns with context pattern and app
+   namespace; `MathService` suffix goes away.
+2. **`web-app/` → move to `priv/static/`** — required for Mix releases to package assets correctly.
+3. **`@impl Mix.Task` on all task `run/1`** — one line per task; prevents "undefined behaviour callback" warnings.
+4. **`.credo.exs`** — pin Credo checks and strictness so all contributors get identical output.
+5. **`start_permanent: Mix.env() == :prod`** — one field in `mix.exs`; ensures VM shuts down if the root supervisor
+   crashes in production.
+6. **`config/local.exs` in `.gitignore`** — remove from git; add to `.gitignore`.
+7. **`CI workflow`** — `.github/workflows/ci.yml` mirroring first PoC.
+8. ~~**`CHANGELOG.md` and `LICENSE`**~~ — done.
+9. **`CalculatorCli.Models.Input` → `CalculatorCli.Input`** — remove `Models` namespace layer.
+10. **`@spec` and `@type t()` on all public modules** — improve dialyzer coverage.
+
 ## Implementation priority
 
 | Priority | Item                      | Core concept                     |
