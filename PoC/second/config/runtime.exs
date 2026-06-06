@@ -1,7 +1,7 @@
 import Config
 
-log_format = "$time $metadata[$level] $message\n"
-log_metadata = [:duration_ms, :method, :path, :request_id, :status]
+log_format = "$date $time [$level] [$node] $metadata- $message\n"
+log_metadata = [:pid, :module, :function, :line, :request_id, :trace_id, :span_id]
 log_rotate_max_bytes = 1_048_576
 log_rotate_keep = 5
 
@@ -53,3 +53,19 @@ config :logger, :calculator_app_log,
     max_bytes: log_rotate_max_bytes,
     keep: log_rotate_keep
   }
+
+# Live: refine console format to include Kubernetes pod identity.
+# Set via the downward API:
+#   env:
+#     - name: POD_NAMESPACE
+#       valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+#     - name: POD_NAME
+#       valueFrom: {fieldRef: {fieldPath: metadata.name}}
+if config_env() == :live do
+  pod_namespace = System.get_env("POD_NAMESPACE", "unknown")
+  pod_name = System.get_env("POD_NAME", "unknown")
+
+  config :logger, :console,
+    format: "$date $timeZ [#{pod_namespace}/#{pod_name}] [$level] [$node] $metadata- $message\n",
+    metadata: [:pid, :module, :request_id, :trace_id, :span_id]
+end

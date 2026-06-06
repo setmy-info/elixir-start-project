@@ -16,6 +16,8 @@ defmodule SetmyInfo.CalculatorRest.CorsPlug do
   The `ensure_json_headers` check in the router provides this guarantee.
   """
 
+  @behaviour Plug
+
   import Plug.Conn
 
   @allowed_origin "*"
@@ -24,9 +26,11 @@ defmodule SetmyInfo.CalculatorRest.CorsPlug do
   @max_age "3600"
 
   @doc false
+  @impl Plug
   def init(opts), do: opts
 
   @doc false
+  @impl Plug
   def call(%Plug.Conn{method: "OPTIONS"} = conn, _opts) do
     conn
     |> put_cors_headers()

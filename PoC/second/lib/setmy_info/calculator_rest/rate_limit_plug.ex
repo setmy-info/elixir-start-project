@@ -9,6 +9,8 @@ defmodule SetmyInfo.CalculatorRest.RateLimitPlug do
   Static files and other non-API paths are exempt from rate limiting.
   """
 
+  @behaviour Plug
+
   import Plug.Conn
 
   alias SetmyInfo.CalculatorRest.RateLimiter
@@ -16,9 +18,11 @@ defmodule SetmyInfo.CalculatorRest.RateLimitPlug do
   @retry_after "60"
 
   @doc false
+  @impl Plug
   def init(opts), do: opts
 
   @doc false
+  @impl Plug
   def call(conn, _opts) do
     if String.starts_with?(conn.request_path, "/api/") do
       check_and_maybe_limit(conn)

@@ -68,7 +68,7 @@ Gherkin BDD tests via White Bread. YAML and TOML parsing examples. Language less
 | Custom Mix tasks (Mix.Task modules)                         |   —   |   ✓    |
 | Credo static analysis                                       |   —   |   ✓    |
 | Logger with file backend                                    |   —   |   ✓    |
-| Structured / JSON log format                                |   —   |   ✓    |
+| Structured Spring Boot-like log format                      |   —   |   ✓    |
 | Telemetry events (Plug.Telemetry)                           |   —   |   ✓    |
 | Config.Provider (TOML runtime config)                       |   —   |   ✓    |
 | Structured input model (defstruct for CLI)                  |   —   |   ✓    |
@@ -76,7 +76,7 @@ Gherkin BDD tests via White Bread. YAML and TOML parsing examples. Language less
 | `doctest` in unit tests                                     |   —   |   ✓    |
 | ExDoc `description:` + `package:` in mix.exs                |   —   |   ✓    |
 | Separate unit / integration / e2e / gherkin tasks           |   —   |   ✓    |
-| Docker multi-stage build / Dockerfile                       |   —   |   ✓    |
+| Dockerfile (host-built OTP release, runtime-only image)     |   —   |   ✓    |
 
 ---
 
@@ -267,11 +267,11 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 | 2  | Non-null fields and arguments where required    |   ✓    | `non_null(:integer)` on both args and return            |
 | 3  | Resolver returns `{:ok, value}`                 |   ✓    | Correct Absinthe resolver shape                         |
 | 4  | Error path returns `{:error, reason}`           |   ✗    | Resolver has no error clause                            |
-| 5  | Mutations defined for state-changing operations |   ~    | No mutations needed now; will matter when Ecto is added |
+| 5  | Mutations defined for state-changing operations |   ~    | Ecto is present (Person schema); CRUD mutations not yet implemented |
 | 6  | Depth / complexity limiting                     |   ✗    | No `Absinthe.Plug` complexity or depth limits           |
 | 7  | Introspection disabled in production            |   ✗    | Introspection is always on                              |
-| 8  | `@desc` on all fields and types                 |   ~    | Only the `add` field has `@desc`                        |
-| 9  | Custom scalars for domain types                 |   ✗    | Using built-in `:integer`                               |
+| 8  | `@desc` on all fields and types                 |   ✓    | `DateTime` scalar, `add_result` type, `add` field, and all sub-fields have `@desc` / `description:` |
+| 9  | Custom scalars for domain types                 |   ✓    | `DateTime` scalar serialises to ISO 8601 with millisecond precision (`2026-01-01T12:00:00.123Z`)    |
 | 10 | Authentication at resolver level                |   ✗    | No context-based auth check in any resolver             |
 
 ---
@@ -284,7 +284,7 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 | 2  | `@doc` on all public functions                                    |   ~    | `MathService` and lessons fully documented; Router private helpers have `@doc false`                                                               |
 | 3  | `@spec` on all public functions                                   |   ~    | `MathService.add/2`, parsers, and lessons have `@spec`; Router functions lack specs                                                                |
 | 4  | `@type` for domain types                                          |   ✓    | `operand` in `MathService`; response types in `Router`; `entry` in `History`; `execute_result` in `Operation`; `pair`/`batch_result` in `Parallel` |
-| 5  | `@impl true` on behaviour callbacks                               |   ✓    | Used on `Application.start/2` and all Mix task `run/1`                                                                                             |
+| 5  | `@impl true` on behaviour callbacks                               |   ~    | Used on GenServer/Supervisor/Application/Mix.Task callbacks; `CorsPlug` and `RateLimitPlug` Plug callbacks lacked `@impl Plug` (now fixed)         |
 | 6  | Guard clauses for argument validation                             |   ✓    | `when is_integer(a) and is_integer(b)` in `MathService.add/2`                                                                                      |
 | 7  | Pattern matching over conditionals                                |   ✓    | Router uses `with`, function clause matching throughout                                                                                            |
 | 8  | `{:ok, result} \| {:error, reason}` convention                    |   ✓    | Used in parsers, Router `with` chain                                                                                                               |
@@ -324,7 +324,7 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 | #  | Check                                      | Status | Notes                                                                                                                           |
 |----|--------------------------------------------|:------:|---------------------------------------------------------------------------------------------------------------------------------|
 | 1  | Input type validation at API boundary      |   ✓    | Router checks `is_integer(a) and is_integer(b)` before calling service                                                          |
-| 2  | No SQL injection surface                   |   ✓    | No database; not applicable                                                                                                     |
+| 2  | No SQL injection surface                   |   ✓    | Ecto/SQLite present; all queries use Ecto's parameterised query API — no raw SQL surface                                        |
 | 3  | No command injection surface               |   ✓    | No shell calls from user input                                                                                                  |
 | 4  | Sobelow static security scan               |   ✓    | Dep added (`~> 0.13`, dev/test only); `.sobelow-conf` committed; `mix quality` runs sobelow                                     |
 | 5  | Dependency vulnerability audit (mix_audit) |   ✓    | `mix_audit` added (`~> 2.1`, dev/test only); `mix deps.audit` available                                                         |
@@ -344,7 +344,7 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 | 2 | Log level configurable at runtime           |   ✓    | `CALCULATOR_LOG_LEVEL` env var read in `runtime.exs`                                                          |
 | 3 | `request_id` in log metadata                |   ✓    | Declared in logger format                                                                                     |
 | 4 | `request_id` set per request in `Plug.Conn` |   ✓    | `Plug.RequestId` assigns unique ID; `method`, `path`, `status`, `duration_ms` also in metadata                |
-| 5 | Structured / machine-readable log format    |   ✓    | `JsonLogFormatter` emits one JSON object per line; enabled in `:live` env via `config/live.exs`               |
+| 5 | Structured / machine-readable log format    |   ✓    | Spring Boot-like text format: `$date $timeZ [$level] [$node] $metadata- $message`; `utc_log: true` in `:live` env produces `2026-06-06 20:22:41.038Z` timestamps |
 | 6 | Telemetry events for HTTP requests          |   ✓    | `Plug.Telemetry` emits `[:calculator_app, :http, :stop]`; `TelemetryHandler` logs method/path/status/duration |
 | 7 | Log directory created before logger starts  |   ✓    | `ensure_log_directory!/0` called in `Application.start/2`                                                     |
 | 8 | Sensitive data not logged                   |   ✓    | No credentials or tokens flow through the app                                                                 |
@@ -386,8 +386,8 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 |--------------------|:---------:|:-------:|:-------:|-------|
 | REST / HTTP        |    10     |    1    |    4    | 67 %  |
 | OpenAPI 3.2        |    10     |    0    |    0    | 100 % |
-| GraphQL            |     3     |    2    |    5    | 30 %  |
-| Elixir / OTP       |    13     |    2    |    0    | 87 %  |
+| GraphQL            |     5     |    1    |    4    | 50 %  |
+| Elixir / OTP       |    12     |    3    |    0    | 80 %  |
 | Testing            |    14     |    0    |    0    | 100 % |
 | Security           |     9     |    0    |    1    | 90 %  |
 | Logging            |     8     |    0    |    0    | 100 % |
