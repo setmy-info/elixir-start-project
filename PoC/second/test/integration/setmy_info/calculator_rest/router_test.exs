@@ -42,7 +42,9 @@ defmodule SetmyInfo.CalculatorRest.RouterTest do
       |> Router.call([])
 
     assert conn.status == 200
-    assert Jason.decode!(conn.resp_body) == %{"result" => 5}
+    body = Jason.decode!(conn.resp_body)
+    assert body["result"] == 5
+    assert is_binary(body["at"])
   end
 
   test "POST /api/add returns 400 when a parameter is missing" do
@@ -109,13 +111,13 @@ defmodule SetmyInfo.CalculatorRest.RouterTest do
     assert Jason.decode!(conn.resp_body) == %{"error" => "Accept must allow application/json."}
   end
 
-  test "POST /api/graphql returns the sum through GraphQL" do
+  test "POST /api/graphql returns the sum and UTC timestamp through GraphQL" do
     conn =
       conn(
         :post,
         "/api/graphql",
         Jason.encode!(%{
-          query: "query Add($a: Int!, $b: Int!) { add(a: $a, b: $b) }",
+          query: "query Add($a: Int!, $b: Int!) { add(a: $a, b: $b) { result at } }",
           variables: %{a: 4, b: 6}
         })
       )
@@ -124,7 +126,10 @@ defmodule SetmyInfo.CalculatorRest.RouterTest do
       |> Router.call([])
 
     assert conn.status == 200
-    assert Jason.decode!(conn.resp_body) == %{"data" => %{"add" => 10}}
+    body = Jason.decode!(conn.resp_body)
+    assert get_in(body, ["data", "add", "result"]) == 10
+    assert is_binary(get_in(body, ["data", "add", "at"]))
+    assert String.ends_with?(get_in(body, ["data", "add", "at"]), "Z")
   end
 
   test "GET / serves static html from the same server" do
@@ -181,9 +186,14 @@ defmodule SetmyInfo.CalculatorRest.RouterTest do
 
     assert payload["openapi"] == "3.2.0"
     assert get_in(payload, ["info", "version"]) == "2.0"
-    assert get_in(payload, ["paths", "/api/add", "post", "summary"]) == "Add two integers"
+    assert get_in(payload, ["paths", "/api/add", "post", "operationId"]) == "addIntegers"
+    assert get_in(payload, ["paths", "/api/calc", "post", "operationId"]) == "calculate"
+    assert get_in(payload, ["paths", "/api/batch", "post", "operationId"]) == "batchAdd"
+    assert get_in(payload, ["paths", "/api/history", "get", "operationId"]) == "getHistory"
+    assert get_in(payload, ["paths", "/api/total", "get", "operationId"]) == "getRunningTotal"
+    assert get_in(payload, ["servers"]) |> hd() |> Map.fetch!("url") == "http://localhost:4000"
     assert get_in(payload, ["components", "schemas", "AddRequest", "type"]) == "object"
-    assert get_in(payload, ["components", "schemas", "AddResponse", "type"]) == "object"
+    assert get_in(payload, ["components", "schemas", "HistoryEntry", "type"]) == "object"
     assert get_in(payload, ["components", "schemas", "ErrorResponse", "type"]) == "object"
 
     assert get_resp_header(conn, "content-type")
@@ -198,7 +208,7 @@ defmodule SetmyInfo.CalculatorRest.RouterTest do
 
     assert conn.status == 200
     assert conn.resp_body =~ "SwaggerUIBundle"
-    assert conn.resp_body =~ "/swagger.json"
+    assert conn.resp_body =~ "/openapi.json"
 
     assert get_resp_header(conn, "content-type")
            |> Enum.any?(&String.starts_with?(&1, "text/html"))
@@ -264,7 +274,7 @@ defmodule SetmyInfo.CalculatorRest.RouterTest do
         |> Router.call([])
 
       assert conn.status == 200
-      assert Jason.decode!(conn.resp_body) == %{"result" => 10}
+      assert Jason.decode!(conn.resp_body)["result"] == 10
     end
 
     test "subtract operation returns the difference" do
@@ -275,7 +285,7 @@ defmodule SetmyInfo.CalculatorRest.RouterTest do
         |> Router.call([])
 
       assert conn.status == 200
-      assert Jason.decode!(conn.resp_body) == %{"result" => 7}
+      assert Jason.decode!(conn.resp_body)["result"] == 7
     end
 
     test "divide by zero returns 400" do
@@ -390,6 +400,51 @@ defmodule SetmyInfo.CalculatorRest.RouterTest do
 
       assert conn.status == 404
       assert get_resp_header(conn, "access-control-allow-origin") == ["*"]
+    end
+  end
+
+  describe "GET /api/total — RunningTotal Agent" do
+    test "returns 200 with total 0 when agent is not running" do
+      conn =
+        conn(:get, "/api/total")
+        |> Router.call([])
+
+      assert conn.status == 200
+      assert Jason.decode!(conn.resp_body)["total"] == 0
+    end
+  end
+
+  describe "POST /api/total — RunningTotal Agent" do
+    test "returns 503 when agent is not running" do
+      conn =
+        conn(:post, "/api/total", Jason.encode!(%{value: 5}))
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("accept", "application/json")
+        |> Router.call([])
+
+      assert conn.status == 503
+      assert Jason.decode!(conn.resp_body)["error"] =~ "not available"
+    end
+
+    test "returns 400 when value is not an integer" do
+      conn =
+        conn(:post, "/api/total", Jason.encode!(%{value: "five"}))
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("accept", "application/json")
+        |> Router.call([])
+
+      assert conn.status == 400
+    end
+  end
+
+  describe "DELETE /api/total — RunningTotal Agent" do
+    test "returns 200 with total 0 regardless of agent state" do
+      conn =
+        conn(:delete, "/api/total")
+        |> Router.call([])
+
+      assert conn.status == 200
+      assert Jason.decode!(conn.resp_body)["total"] == 0
     end
   end
 

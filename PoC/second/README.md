@@ -255,17 +255,24 @@ The same `mix server` process also exposes GraphQL at:
 http://localhost:4000/api/graphql
 ```
 
+The `add` field returns an object with `result` (integer) and `at` (UTC timestamp with
+millisecond precision).  You must select the subfields you want — querying `add` without
+`{ ... }` produces an error.
+
 Example GraphQL request from PowerShell:
 
 ```powershell
-Invoke-RestMethod -Method Post -Uri http://localhost:4000/api/graphql -ContentType "application/json" -Body '{"query":"query Add($a:Int!,$b:Int!){ add(a:$a,b:$b) }","variables":{"a":2,"b":3}}'
+Invoke-RestMethod -Method Post -Uri http://localhost:4000/api/graphql -ContentType "application/json" -Body '{"query":"query Add($a:Int!,$b:Int!){ add(a:$a,b:$b){ result at } }","variables":{"a":2,"b":3}}'
 ```
 
 Example query for the in-browser GraphQL console:
 
 ```graphql
 query Add($a: Int!, $b: Int!) {
-    add(a: $a, b: $b)
+    add(a: $a, b: $b) {
+        result
+        at
+    }
 }
 ```
 
@@ -283,7 +290,10 @@ Expected response:
 ```json
 {
     "data": {
-        "add": 5
+        "add": {
+            "result": 5,
+            "at": "2026-06-06T12:00:00.123Z"
+        }
     }
 }
 ```
@@ -601,7 +611,7 @@ curl -i http://localhost:4000/graphiql
 curl -i http://localhost:4000/swagger
 curl -i http://localhost:4000/swagger.json
 curl -i -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"a":2,"b":3}' http://localhost:4000/api/add
-curl -i -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"query":"query Add($a:Int!,$b:Int!){ add(a:$a,b:$b) }","variables":{"a":2,"b":3}}' http://localhost:4000/api/graphql
+curl -i -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"query":"query Add($a:Int!,$b:Int!){ add(a:$a,b:$b){ result at } }","variables":{"a":2,"b":3}}' http://localhost:4000/api/graphql
 kill $SERVER_PID
 wait $SERVER_PID 2>/dev/null
 ```
@@ -625,8 +635,8 @@ Things to verify while going through the QA flow:
 - The served web page contains the add form, both number inputs, and the `Add numbers` button.
 - The served `app.js` still targets both `/api/add` and `/api/graphql`, so the web UI can submit the add-two-numbers
   request through either backend.
-- `POST /api/add` returns JSON `{ "result": 5 }`.
-- `POST /api/graphql` returns GraphQL data with `add: 5`.
+- `POST /api/add` returns JSON `{ "result": 5, "at": "<utc-timestamp>" }`.
+- `POST /api/graphql` with `{ add(a:2,b:3){ result at } }` returns `"add": { "result": 5, "at": "<utc-timestamp>" }`.
 - `http://localhost:4000/graphiql` opens the GraphQL GUI.
 - `http://localhost:4000/swagger` opens the REST Swagger UI.
 - `http://localhost:4000/swagger.json` returns the generated OpenAPI 3.2.0 API description for app version `2.0`.
@@ -647,11 +657,64 @@ setmyinfo/calculator-app:latest
 
 ### Build
 
-From the `PoC/second` directory:
+The OTP release is compiled on the host first; Docker only packages the result.
+This avoids compiler tooling inside the image and keeps the image small.
+
+#### Step 1 — build the OTP release (skip if already built)
+
+Check whether a release already exists:
+
+```sh
+ls _build/live/rel/calculator_app/bin/calculator_app
+```
+
+If the file is missing, build it:
+
+```sh
+MIX_ENV=live mix deps.get --only live
+MIX_ENV=live mix release
+```
+
+The release lands in `_build/live/rel/calculator_app/`.
+
+One-liner that only runs if the release is absent:
+
+```sh
+test -f _build/live/rel/calculator_app/bin/calculator_app || \
+    (MIX_ENV=live mix deps.get --only live && MIX_ENV=live mix release)
+```
+
+#### Step 2 — build the Docker image (skip if already built)
+
+Check whether the image already exists locally:
+
+```sh
+docker image inspect setmyinfo/calculator-app:latest
+```
+
+If the command exits with an error the image is absent; build it:
 
 ```sh
 docker build -t setmyinfo/calculator-app:latest .
 ```
+
+One-liner that only runs if the image is absent:
+
+```sh
+docker image inspect setmyinfo/calculator-app:latest >/dev/null 2>&1 || \
+    docker build -t setmyinfo/calculator-app:latest .
+```
+
+#### Convenience script (builds both, skips what is already present)
+
+```sh
+scripts/build_docker.sh
+# custom tag:
+scripts/build_docker.sh setmyinfo/calculator-app:1.0.0
+```
+
+> **Note:** The Docker base image (`almalinux:10-minimal`) matches the EL10
+> host so the bundled ERTS and NIFs (SQLite) are ABI-compatible.
 
 ### Run — foreground (stays open, Ctrl-C to stop)
 

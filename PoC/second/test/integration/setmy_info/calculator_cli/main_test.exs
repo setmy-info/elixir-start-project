@@ -16,4 +16,10 @@ defmodule SetmyInfo.CalculatorCli.MainTest do
 
     assert output == "Usage: calculator_app <a> <b>\n"
   end
+
+  test "prints usage for non-integer string arguments" do
+    output = capture_io(fn -> Main.main(["foo", "bar"]) end)
+
+    assert output == "Usage: calculator_app <a> <b>\n"
+  end
 end

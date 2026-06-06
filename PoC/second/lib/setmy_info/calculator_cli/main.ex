@@ -14,15 +14,15 @@ defmodule SetmyInfo.CalculatorCli.Main do
 
   When the arguments are invalid or missing, usage text is printed instead.
   """
-  def main([a, b]) do
-    input = %Input{
-      a: String.to_integer(a),
-      b: String.to_integer(b)
-    }
-
-    result = MathService.add(input.a, input.b)
-
-    IO.puts("Result: #{result}")
+  def main([a_str, b_str]) do
+    with {a, ""} <- Integer.parse(a_str),
+         {b, ""} <- Integer.parse(b_str) do
+      input = %Input{a: a, b: b}
+      result = MathService.add(input.a, input.b)
+      IO.puts("Result: #{result}")
+    else
+      _ -> IO.puts("Usage: calculator_app <a> <b>")
+    end
   end
 
   @doc false

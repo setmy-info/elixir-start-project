@@ -6,6 +6,7 @@ defmodule SetmyInfo.CalculatorApp.ServiceSupervisor do
   - `Task.Supervisor` — for supervised parallel computation
   - `SetmyInfo.CalculatorApp.Cache` — ETS-backed result cache
   - `SetmyInfo.CalculatorApp.History` — GenServer calculation history
+  - `SetmyInfo.CalculatorApp.RunningTotal` — Agent running sum
 
   Started as a child of `SetmyInfo.CalculatorApp.Application` after the
   `SetmyInfo.CalculatorApp.ServiceRegistry` Registry so that `History`
@@ -17,7 +18,7 @@ defmodule SetmyInfo.CalculatorApp.ServiceSupervisor do
 
   use Supervisor
 
-  alias SetmyInfo.CalculatorApp.{Cache, History, TaskSupervisor}
+  alias SetmyInfo.CalculatorApp.{Cache, History, RunningTotal, TaskSupervisor}
 
   def start_link(opts) do
     Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
@@ -28,7 +29,8 @@ defmodule SetmyInfo.CalculatorApp.ServiceSupervisor do
     children = [
       {Task.Supervisor, name: TaskSupervisor},
       Cache,
-      History
+      History,
+      RunningTotal
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

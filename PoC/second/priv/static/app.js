@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
             Accept: "application/json"
           },
           body: JSON.stringify({
-            query: "query Add($a: Int!, $b: Int!) { add(a: $a, b: $b) }",
+            query: "query Add($a: Int!, $b: Int!) { add(a: $a, b: $b) { result at } }",
             variables: { a, b }
           })
         });
@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        resultElement.textContent = `Result: ${payload.data.add}`;
+        resultElement.textContent = `Result: ${payload.data.add.result}`;
         return;
       }
 

@@ -25,54 +25,58 @@ Gherkin BDD tests via White Bread. YAML and TOML parsing examples. Language less
 
 ## Feature matrix
 
-| Feature                                           | first | second |
-|---------------------------------------------------|:-----:|:------:|
-| OTP umbrella (multi-app)                          |   ✓   |   —    |
-| GenServer Worker per loaded module                |   ✓   |   —    |
-| DynamicSupervisor for Workers                     |   ✓   |   —    |
-| ETS table (public, named, read_concurrency)       |   ✓   |   —    |
-| Registry (via-tuple process lookup)               |   ✓   |   —    |
-| ModuleRegistry (ETS-backed spec store)            |   ✓   |   —    |
-| Hot code swap (load_from_source / load_from_beam) |   ✓   |   —    |
-| Behaviour definition (`Module` behaviour)         |   ✓   |   —    |
-| Ecto Repo + SQLite + migrations                   |   ✓   |   ✓    |
-| Ecto schema (`Person`) + context (`Persons`)      |   ✓   |   ✓    |
-| WASM engine stub                                  |   ✓   |   —    |
-| Standalone Elixir scripts (BEAM lifecycle)        |   ✓   |   ✓    |
-| Multiply / subtract in math module                |   ✓   |   —    |
-| Bitwise operations                                |   ✓   |   ✓    |
-| REST API (Plug.Router)                            |   ✓   |   ✓    |
-| GraphQL (Absinthe)                                |   ✓   |   ✓    |
-| CLI escript                                       |   ✓   |   ✓    |
-| YAML parsing (yaml_elixir / yamerl)               |   ✓   |   ✓    |
-| TOML parsing (toml library)                       |   ✓   |   ✓    |
-| Gherkin / BDD tests (White Bread)                 |   ✓   |   ✓    |
-| Feature files (`.feature`)                        |   ✓   |   ✓    |
-| Lessons app (data types, data structures, algos…) |   ✓   |   ✓    |
-| Mutation testing (Muzak)                          |   ✓   |   ✓    |
-| Sobelow security scan                             |   ✓   |   ✓    |
-| mix_audit dependency vulnerability scan           |   ✓   |   ✓    |
-| Content-type negotiation (415 / 406)              |   —   |   ✓    |
-| Swagger / OpenAPI 3.2                             |   —   |   ✓    |
-| Static web frontend (HTML + CSS + JS)             |   —   |   ✓    |
-| GraphiQL interactive UI                           |   —   |   ✓    |
-| Custom Mix tasks (Mix.Task modules)               |   —   |   ✓    |
-| Credo static analysis                             |   —   |   ✓    |
-| Logger with file backend                          |   —   |   ✓    |
-| Structured input model (defstruct for CLI)        |   —   |   ✓    |
-| `doctest` in unit tests                           |   —   |   ✓    |
-| ExDoc `description:` + `package:` in mix.exs      |   —   |   ✓    |
-| Separate unit / integration / e2e / gherkin tasks |   —   |   ✓    |
-| GenServer with state (History)                    |   ✓   |   ✓    |
-| ETS table — calculation result cache              |   ✓   |   ✓    |
-| Registry (via-tuple named process lookup)         |   ✓   |   ✓    |
-| Behaviour definition (Operation + impls)          |   ✓   |   ✓    |
-| Multi-level supervisor tree (ServiceSupervisor)   |   ✓   |   ✓    |
-| Task / parallel computation (async_stream)        |   ✓   |   ✓    |
-| Property-based tests (StreamData)                 |   —   |   ✓    |
-| Structured / JSON log format                      |   —   |   ✓    |
-| Telemetry events (Plug.Telemetry)                 |   —   |   ✓    |
-| Config.Provider (TOML runtime config)             |   —   |   ✓    |
+| Feature                                                     | first | second |
+|-------------------------------------------------------------|:-----:|:------:|
+| OTP umbrella (multi-app)                                    |   ✓   |   —    |
+| GenServer Worker per loaded module (one process per module) |   ✓   |   —    |
+| Stateful GenServer (Loader / ModuleRegistry / History)      |   ✓   |   ✓    |
+| Agent (shared mutable state)                                |   ✓   |   ✓    |
+| DynamicSupervisor for Workers                               |   ✓   |   —    |
+| Multi-level supervisor tree                                 |   ✓   |   ✓    |
+| `rest_for_one` supervisor strategy                          |   ✓   |   —    |
+| Registry (via-tuple named process lookup)                   |   ✓   |   ✓    |
+| ETS table (public, named, read_concurrency)                 |   ✓   |   ✓    |
+| ModuleRegistry (ETS-backed spec store)                      |   ✓   |   —    |
+| Loader / Executor facade (full lifecycle API)               |   ✓   |   —    |
+| Loader crash recovery (reconcile with Registry)             |   ✓   |   —    |
+| Behaviour definition (`@behaviour` / `@callback`)           |   ✓   |   ✓    |
+| Hot code swap (load_from_source / load_from_beam)           |   ✓   |   —    |
+| Task / parallel computation (async_stream)                  |   —   |   ✓    |
+| WASM engine stub                                            |   ✓   |   —    |
+| Ecto Repo + SQLite + migrations                             |   ✓   |   ✓    |
+| Ecto schema (`Person`) + context (`Persons`)                |   ✓   |   ✓    |
+| REST API (Plug.Router)                                      |   ✓   |   ✓    |
+| GraphQL (Absinthe)                                          |   ✓   |   ✓    |
+| GraphiQL interactive UI                                     |   ✓   |   ✓    |
+| CLI escript                                                 |   ✓   |   ✓    |
+| YAML parsing (yaml_elixir / yamerl)                         |   ✓   |   ✓    |
+| TOML parsing (toml library)                                 |   ✓   |   ✓    |
+| Gherkin / BDD tests (White Bread)                           |   ✓   |   ✓    |
+| Feature files (`.feature`)                                  |   ✓   |   ✓    |
+| Standalone Elixir scripts (BEAM lifecycle)                  |   ✓   |   ✓    |
+| Lessons app (data types, data structures, algos…)           |   ✓   |   ✓    |
+| Bitwise operations                                          |   ✓   |   ✓    |
+| Arithmetic ops beyond add (subtract / multiply / divide)    |   ✓   |   ✓    |
+| Mutation testing (Muzak)                                    |   ✓   |   ✓    |
+| Sobelow security scan                                       |   ✓   |   ✓    |
+| mix_audit dependency vulnerability scan                     |   ✓   |   ✓    |
+| Content-type negotiation (415 / 406)                        |   —   |   ✓    |
+| Swagger / OpenAPI 3.2                                       |   —   |   ✓    |
+| Static web frontend (HTML + CSS + JS)                       |   —   |   ✓    |
+| Rate limiting (ETS per-IP fixed window)                     |   —   |   ✓    |
+| CORS / OPTIONS preflight (CorsPlug)                         |   —   |   ✓    |
+| Custom Mix tasks (Mix.Task modules)                         |   —   |   ✓    |
+| Credo static analysis                                       |   —   |   ✓    |
+| Logger with file backend                                    |   —   |   ✓    |
+| Structured / JSON log format                                |   —   |   ✓    |
+| Telemetry events (Plug.Telemetry)                           |   —   |   ✓    |
+| Config.Provider (TOML runtime config)                       |   —   |   ✓    |
+| Structured input model (defstruct for CLI)                  |   —   |   ✓    |
+| Property-based tests (StreamData)                           |   —   |   ✓    |
+| `doctest` in unit tests                                     |   —   |   ✓    |
+| ExDoc `description:` + `package:` in mix.exs                |   —   |   ✓    |
+| Separate unit / integration / e2e / gherkin tasks           |   —   |   ✓    |
+| Docker multi-stage build / Dockerfile                       |   —   |   ✓    |
 
 ---
 
@@ -144,18 +148,19 @@ graceful `:ets.whereis/1` check when table not yet created.
 
 ---
 
-### 7. Agent — shared mutable state (simple alternative to GenServer)
+### 7. Agent — shared mutable state (simple alternative to GenServer) ✓ Done
 
-**What:** A `SetmyInfo.CalculatorApp.RunningTotal` Agent that keeps a running sum.
+**What:** `SetmyInfo.CalculatorApp.RunningTotal` Agent keeping a running sum.
+`get/0`, `add/1`, `reset/0`. Three REST endpoints: `GET /api/total`, `POST /api/total`,
+`DELETE /api/total`. Supervised under `ServiceSupervisor`.
 
-**Teaches:**
-
-- `Agent.start_link/2`, `Agent.get/2`, `Agent.update/2`, `Agent.get_and_update/2`
-- When to choose Agent over GenServer (no custom message handling needed)
+**Teaches:** `Agent.start_link/2`, `Agent.get/2`, `Agent.update/2`,
+`Agent.get_and_update/2`, when to choose Agent over GenServer (pure state
+transformation, no custom message handling needed).
 
 ---
 
-### 8. Ecto + SQLite — persist calculation results
+### 8. Ecto + SQLite — persist calculation results ✓ Done
 
 **What:** `SetmyInfo.Ecto.Repo` (SQLite3), `SetmyInfo.Ecto.Person` schema,
 `SetmyInfo.Ecto.Persons` context, and `priv/repo/migrations/`.
@@ -241,16 +246,16 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 
 | #  | Check                                                    | Status | Notes                                                                          |
 |----|----------------------------------------------------------|:------:|--------------------------------------------------------------------------------|
-| 1  | Valid `openapi: "3.2.0"` field                           |   ✓    | Correct version string                                                         |
-| 2  | `info.title`, `info.version` present                     |   ✓    | Title and `"2.0"` version present                                              |
-| 3  | `servers` array with base URL                            |   ✗    | Missing `servers: [%{url: "http://localhost:4000"}]`                           |
-| 4  | `operationId` on each operation                          |   ✗    | No `operationId` field                                                         |
-| 5  | Response schemas for all documented codes                |   ~    | 200, 400, 406, 415 documented; 404 and 500 not documented                      |
-| 6  | Example values in schemas                                |   ✗    | No `example:` fields on schema properties                                      |
-| 7  | `$ref` component schemas for all request/response bodies |   ✓    | `AddRequest`, `AddResponse`, `ErrorResponse` all use `$ref`                    |
-| 8  | `required` fields listed on request schema               |   ✓    | `required: ["a", "b"]` present                                                 |
-| 9  | `info.contact` and `info.license`                        |   ✗    | Not present                                                                    |
-| 10 | Spec served at `/openapi.json` or `/swagger.json`        |   ~    | Served at `/swagger.json`; the OpenAPI 3 convention recommends `/openapi.json` |
+| 1  | Valid `openapi: "3.2.0"` field                           |   ✓    | Correct version string                                                                                |
+| 2  | `info.title`, `info.version` present                     |   ✓    | Title and `"2.0"` version present                                                                     |
+| 3  | `servers` array with base URL                            |   ✓    | `servers: [%{url: "http://localhost:4000"}]` present                                                  |
+| 4  | `operationId` on each operation                          |   ✓    | All 7 operations have `operationId` (addIntegers, calculate, batchAdd, getHistory, …)                 |
+| 5  | Response schemas for all documented codes                |   ✓    | All endpoints document 200, 429, 500; POST endpoints also 400, 406, 415; `/api/total` POST also 503   |
+| 6  | Example values in schemas                                |   ✓    | `example:` added to every schema property and at schema level                                         |
+| 7  | `$ref` component schemas for all request/response bodies |   ✓    | All 13 schemas defined in `components/schemas` and referenced by `$ref`                               |
+| 8  | `required` fields listed on request schema               |   ✓    | `required` array present on all request schemas                                                       |
+| 9  | `info.contact` and `info.license`                        |   ✓    | `contact` (GitHub URL) and `license` (MIT) added to `info`                                            |
+| 10 | Spec served at `/openapi.json` or `/swagger.json`        |   ✓    | Served at both `/openapi.json` (standard) and `/swagger.json` (legacy); Swagger UI uses `/openapi.json`|
 
 ---
 
@@ -309,7 +314,7 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 | 10 | Property-based tests (StreamData)                 |   ✓    | `stream_data ~> 1.1` dep; 5 properties in `MathServicePropertyTest` (commutativity, identity, associativity)                |
 | 11 | Test tags (`@tag :slow`, `@tag :integration`)     |   ✓    | `:unit`, `:integration`, `:e2e`, `:gherkin`, `:slow`, `:property`, `:concurrent` tags used; documented in `test_helper.exs` |
 | 12 | Test for concurrent requests                      |   ✓    | `@tag :concurrent` test in `RouterTest` spawns 30 parallel `Task.async` calls to `POST /api/add`                            |
-| 13 | CLI argument validation test                      |   ~    | Tests cover valid 2-arg and invalid 1-arg; no test for non-integer strings                                                  |
+| 13 | CLI argument validation test                      |   ✓    | Tests cover valid 2-arg, invalid 1-arg, and non-integer strings; `Integer.parse/1` replaces `String.to_integer/1`           |
 | 14 | Dedicated test tasks per type                     |   ✓    | `mix test.unit`, `mix test.integration`, `mix test.e2e`, `mix test.gherkin`, `mix test.mutation`                            |
 
 ---
@@ -380,13 +385,13 @@ claims to implement. Legend: ✓ = compliant, ~ = partial, ✗ = missing or wron
 | Standard area      | Compliant | Partial | Missing | Score |
 |--------------------|:---------:|:-------:|:-------:|-------|
 | REST / HTTP        |    10     |    1    |    4    | 67 %  |
-| OpenAPI 3.2        |     4     |    1    |    5    | 45 %  |
-| GraphQL            |     3     |    2    |    5    | 40 %  |
-| Elixir / OTP       |    11     |    3    |    1    | 77 %  |
-| Testing            |    11     |    2    |    1    | 82 %  |
+| OpenAPI 3.2        |    10     |    0    |    0    | 100 % |
+| GraphQL            |     3     |    2    |    5    | 30 %  |
+| Elixir / OTP       |    13     |    2    |    0    | 87 %  |
+| Testing            |    14     |    0    |    0    | 100 % |
 | Security           |     9     |    0    |    1    | 90 %  |
 | Logging            |     8     |    0    |    0    | 100 % |
-| Configuration      |     6     |    1    |    0    | 93 %  |
+| Configuration      |     7     |    0    |    0    | 100 % |
 | Style / formatting |     8     |    0    |    0    | 100 % |
 
 **Top gaps by impact:**
@@ -528,17 +533,17 @@ my_app/                        ← project root
 2. **`@spec` on all public module functions** — Router, Application, and task functions still lack specs.
 3. **`SetmyInfo.CalculatorCli.Models.Input` → `SetmyInfo.CalculatorCli.Input`** — remove `Models` namespace layer.
 
-## Implementation priority
+## Remaining enhancements for PoC/second
 
-| Priority | Item                      | Core concept                     |
-|:--------:|---------------------------|----------------------------------|
-|    1     | Subtract / Multiply (#11) | Extend existing layers uniformly |
-|    2     | Behaviour (#4)            | Pluggable modules, `@callback`   |
-|    3     | GenServer history (#1)    | Stateful OTP process             |
-|    4     | ETS cache (#2)            | Lock-free in-memory reads        |
-|    5     | Registry (#3)             | Named process lookup             |
-|    6     | Supervisor tree (#5)      | Multi-level OTP supervision      |
-|    7     | Task batch (#6)           | Concurrent computation           |
-|    8     | Agent total (#7)          | Simple shared state              |
-|    9     | Hot code swap (#9)        | Runtime module reload            |
-|    10    | Protocol (#10)            | Data-driven polymorphism         |
+Items 1–8 from the "Good examples" list above are all implemented.
+The following three items remain:
+
+| # | Item                                                 | Core concept                      |
+|:-:|------------------------------------------------------|-----------------------------------|
+| 9 | Hot code swap (`HotCode.load_from_source`)           | Runtime module reload (BEAM model)|
+|10 | Protocol — `Calculable` for different numeric types  | Data-driven polymorphism          |
+|11 | Subtract / multiply directly in `MathService`        | Extend existing layers uniformly  |
+
+Note: subtract, multiply, and divide already exist as `Operation` behaviour
+implementations (`Add`, `Subtract`, `Multiply`, `Divide`). Item 11 is about adding
+them to `SetmyInfo.Math.MathService` directly so the pure math module is complete.

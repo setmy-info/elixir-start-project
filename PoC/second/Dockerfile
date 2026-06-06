@@ -1,42 +1,17 @@
-# ── Stage 1: build OTP release ────────────────────────────────────────────────
-FROM elixir:1.18-slim AS builder
+# Runtime-only image — the OTP release must be built on the host before docker build.
+# Build first:  MIX_ENV=live mix deps.get --only live && MIX_ENV=live mix release
+# Then:         docker build -t setmyinfo/calculator-app:latest .
+FROM almalinux:10-minimal
 
-WORKDIR /build
-
-RUN apt-get update -q && \
-    apt-get install -y --no-install-recommends build-essential git && \
-    rm -rf /var/lib/apt/lists/*
-
-ENV MIX_ENV=live
-
-# Imre
-#RUN mix local.hex --force && mix local.rebar --force
-
-# Fetch deps first — layer is cached until mix.exs or mix.lock changes
-COPY mix.exs mix.lock ./
-
-# Imre
-#RUN mix deps.get --only live
-RUN mix deps.get
-
-# Config is read at compile time (config.exs imports live.exs)
-COPY config/ config/
-
-# Application source and priv (static assets, example TOML config)
-COPY lib/ lib/
-COPY priv/ priv/
-
-RUN mix deps.compile && mix release
-
-# ── Stage 2: minimal runtime ───────────────────────────────────────────────────
-FROM debian:bookworm-slim AS runtime
-
-# SQLite driver, OpenSSL (crypto), ncurses (ERTS interactive mode), locale, certs
-RUN apt-get update -q && \
-    apt-get install -y --no-install-recommends \
-        libsqlite3-0 libssl3 libncurses6 locales ca-certificates && \
-    locale-gen en_US.UTF-8 && \
-    rm -rf /var/lib/apt/lists/*
+# SQLite NIF, OpenSSL (Erlang crypto), ncurses (ERTS), UTF-8 locale, TLS certs
+RUN microdnf install -y \
+        sqlite-libs \
+        openssl-libs \
+        ncurses-libs \
+        glibc-langpack-en \
+        shadow-utils \
+        ca-certificates \
+    && microdnf clean all
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
@@ -45,8 +20,8 @@ RUN useradd --create-home --shell /bin/sh calculator
 
 WORKDIR /home/calculator
 
-# Self-contained OTP release (includes bundled ERTS — no Elixir/Erlang needed here)
-COPY --from=builder --chown=calculator:calculator /build/_build/live/rel/calculator_app ./
+# Pre-built OTP release (includes bundled ERTS — no Elixir/Erlang needed here)
+COPY --chown=calculator:calculator _build/live/rel/calculator_app ./
 
 RUN mkdir -p log && chown calculator:calculator log
 

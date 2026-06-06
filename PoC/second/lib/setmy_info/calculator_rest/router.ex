@@ -24,9 +24,13 @@ defmodule SetmyInfo.CalculatorRest.Router do
   | POST   | `/api/calc`    | Generic operation via `Operation` behaviour      |
   | POST   | `/api/batch`   | Parallel addition of a list of pairs             |
   | GET    | `/api/history` | Return recent operations from `History` GenServer|
+  | GET    | `/api/total`   | Return current running total (`RunningTotal` Agent)|
+  | POST   | `/api/total`   | Add a value to the running total                 |
+  | DELETE | `/api/total`   | Reset the running total to 0                     |
   | POST   | `/api/graphql` | GraphQL endpoint (Absinthe)                      |
   | GET    | `/graphiql`    | GraphiQL interactive UI                          |
-  | GET    | `/swagger.json`| OpenAPI 3.2 spec                                 |
+  | GET    | `/swagger.json`| OpenAPI 3.2 spec (legacy path)                   |
+  | GET    | `/openapi.json`| OpenAPI 3.2 spec (standard path)                 |
   | GET    | `/swagger`     | Swagger UI                                       |
   | GET    | `/`            | Static web frontend                              |
   """
@@ -47,13 +51,14 @@ defmodule SetmyInfo.CalculatorRest.Router do
 
   import Plug.Conn
 
-  alias SetmyInfo.CalculatorApp.{Cache, History, Operation, Parallel}
+  alias SetmyInfo.CalculatorApp.{Cache, History, Operation, Parallel, RunningTotal}
   alias SetmyInfo.CalculatorRest.{CorsPlug, RateLimitPlug, Swagger}
   alias SetmyInfo.Math.MathService
 
   @type add_result :: %{result: integer()}
   @type calc_result :: %{result: number()}
   @type batch_result :: %{results: [%{a: integer(), b: integer(), result: integer()}]}
+  @type total_result :: %{total: integer()}
   @type error_response :: %{error: String.t()}
 
   @int32_min -2_147_483_648
@@ -98,7 +103,7 @@ defmodule SetmyInfo.CalculatorRest.Router do
 
       conn
       |> put_resp_content_type("application/json")
-      |> send_resp(200, Jason.encode!(%{result: result}))
+      |> send_resp(200, Jason.encode!(%{result: result, at: utc_now_ms()}))
     else
       :not_integers ->
         send_bad_request(conn, "Request body must contain integer fields 'a' and 'b'.")
@@ -121,7 +126,7 @@ defmodule SetmyInfo.CalculatorRest.Router do
          {:ok, result} <- module.execute(a, b) do
       conn
       |> put_resp_content_type("application/json")
-      |> send_resp(200, Jason.encode!(%{result: result}))
+      |> send_resp(200, Jason.encode!(%{result: result, at: utc_now_ms()}))
     else
       {:error, :unknown_op} ->
         ops = Operation.all() |> Map.keys() |> Enum.sort() |> Enum.join(", ")
@@ -143,13 +148,15 @@ defmodule SetmyInfo.CalculatorRest.Router do
          :ok <- validate_pairs(pairs) do
       int_pairs = Enum.map(pairs, fn %{"a" => a, "b" => b} -> {a, b} end)
 
+      at = utc_now_ms()
+
       results =
         Parallel.add_many(int_pairs)
-        |> Enum.map(fn {a, b, r} -> %{a: a, b: b, result: r} end)
+        |> Enum.map(fn {a, b, r} -> %{a: a, b: b, result: r, at: at} end)
 
       conn
       |> put_resp_content_type("application/json")
-      |> send_resp(200, Jason.encode!(%{results: results}))
+      |> send_resp(200, Jason.encode!(%{results: results, at: at}))
     else
       _ ->
         send_bad_request(
@@ -163,7 +170,12 @@ defmodule SetmyInfo.CalculatorRest.Router do
     entries =
       History.all()
       |> Enum.map(fn %{a: a, b: b, result: r, at: at} ->
-        %{a: a, b: b, result: r, at: DateTime.to_iso8601(at)}
+        %{
+          a: a,
+          b: b,
+          result: r,
+          at: at |> DateTime.truncate(:millisecond) |> DateTime.to_iso8601()
+        }
       end)
 
     conn
@@ -171,7 +183,44 @@ defmodule SetmyInfo.CalculatorRest.Router do
     |> send_resp(200, Jason.encode!(%{history: entries}))
   end
 
+  get "/api/total" do
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, Jason.encode!(%{total: RunningTotal.get(), at: utc_now_ms()}))
+  end
+
+  post "/api/total" do
+    with %{"value" => value} when is_integer(value) <- conn.body_params,
+         {:ok, new_total} <- RunningTotal.add(value) do
+      conn
+      |> put_resp_content_type("application/json")
+      |> send_resp(200, Jason.encode!(%{total: new_total, at: utc_now_ms()}))
+    else
+      :not_running ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(503, Jason.encode!(%{error: "Running total service not available."}))
+
+      _ ->
+        send_bad_request(conn, "Request body must contain an integer 'value' field.")
+    end
+  end
+
+  delete "/api/total" do
+    RunningTotal.reset()
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, Jason.encode!(%{total: 0, at: utc_now_ms()}))
+  end
+
   get "/swagger.json" do
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, Swagger.json())
+  end
+
+  get "/openapi.json" do
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, Swagger.json())
@@ -195,6 +244,11 @@ defmodule SetmyInfo.CalculatorRest.Router do
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(404, Jason.encode!(%{error: "Not found"}))
+  end
+
+  @doc false
+  defp utc_now_ms do
+    DateTime.utc_now() |> DateTime.truncate(:millisecond) |> DateTime.to_iso8601()
   end
 
   @doc false
