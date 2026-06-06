@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: ["master", "main"]
+    paths:
+      - "PoC/second/**"
+  pull_request:
+    branches: ["master", "main"]
+    paths:
+      - "PoC/second/**"
+
+defaults:
+  run:
+    working-directory: PoC/second
+
+env:
+  MIX_ENV: test
+
+jobs:
+  test:
+    name: Build and Test (OTP ${{ matrix.otp }} / Elixir ${{ matrix.elixir }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        otp: ["29.x"]
+        elixir: ["1.19.x"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Erlang/OTP and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.elixir }}
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        id: cache-deps
+        with:
+          path: PoC/second/deps
+          key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('PoC/second/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-
+
+      - name: Restore build cache
+        uses: actions/cache@v4
+        with:
+          path: PoC/second/_build
+          key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('PoC/second/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile (warnings as errors)
+        run: mix compile --warnings-as-errors
+
+      - name: Check code formatting
+        run: mix format --check-formatted
+
+      - name: Run Credo static analysis
+        run: mix credo --strict
+
+      - name: Run unit tests
+        run: mix test.unit
+
+      - name: Run integration tests
+        run: mix test.integration
+
+      - name: Run e2e tests
+        run: mix test.e2e
+
+      - name: Run Gherkin BDD tests
+        run: mix test.gherkin
+
+      - name: Security scan (Sobelow)
+        run: mix sobelow --config
+
+      - name: Dependency vulnerability audit
+        run: mix deps.audit
+        # cowlib has an open advisory (GHSA-g2wm-735q-3f56) with no patched version yet
+        continue-on-error: true
+
+      - name: Dependency retirement audit
+        run: mix deps.hex_audit
+        continue-on-error: true
+
+      - name: Build documentation
+        run: mix docs

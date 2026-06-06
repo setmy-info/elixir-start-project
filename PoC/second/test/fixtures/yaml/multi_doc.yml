@@ -1,0 +1,17 @@
+---
+# Document 1: metadata
+kind: ConfigMap
+name: app-config
+version: 1
+---
+# Document 2: development overrides
+kind: ConfigMap
+name: dev-overrides
+debug: true
+log_level: debug
+---
+# Document 3: production overrides
+kind: ConfigMap
+name: prod-overrides
+debug: false
+log_level: warn

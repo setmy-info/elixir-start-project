@@ -1,0 +1,20 @@
+# Calculator App — runtime configuration example
+#
+# Copy to /etc/calculator_app/config.toml and adjust for your environment.
+# Override the file path at boot: CALCULATOR_CONFIG_FILE=/path/to/config.toml
+#
+# All sections and all keys are optional.
+# Values here take precedence over compile-time defaults in config/*.exs
+# but are overridden by environment variables read in runtime.exs.
+
+[server]
+# HTTP port for the REST / GraphQL / Swagger / static-web server
+port = 4000
+
+# Directory and filename for the file-based log backend
+log_dir  = "log"
+log_file = "calculator_app.log"
+
+[database]
+# Absolute path to the SQLite database file
+path = "/var/lib/calculator_app/data.db"

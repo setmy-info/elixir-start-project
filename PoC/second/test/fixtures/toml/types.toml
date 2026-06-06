@@ -1,0 +1,60 @@
+# TOML type demonstration - covers every value type in the TOML 1.0 spec.
+
+# --- Strings ---
+string_value   = "Hello, TOML!"
+bare_string    = "just a string"
+multi_line_str = """
+This is a multi-line
+basic string.
+"""
+literal_str    = 'C:\Users\Alice\Documents'
+
+# --- Integers ---
+integer_value    = 42
+negative_integer = -17
+hex_int          = 0xDEADBEEF
+octal_int        = 0o777
+binary_int       = 0b11010110
+underscored_int  = 1_000_000
+
+# --- Floats ---
+float_value  = 3.14
+scientific   = 1.5e3
+negative_flt = -0.01
+
+# --- Booleans ---
+flag_yes = true
+flag_no  = false
+
+# --- Dates and times (TOML-specific, no equivalent in YAML) ---
+date_val        = 2024-01-15
+time_val        = 09:30:00.999
+datetime_local  = 1979-05-27T07:32:00
+datetime_utc    = 1979-05-27T07:32:00Z
+datetime_offset = 1979-05-27T07:32:00+02:00
+
+# --- Inline table (must be at top level, before any [section] header) ---
+inline_person = {first_name = "Alice", age = 30}
+
+# --- Arrays (must be at top level, before any [section] header) ---
+colors       = ["red", "green", "blue"]
+mixed_ints   = [1, 2, 3]
+nested_array = [[1, 2], [3, 4], [5, 6]]
+
+# --- Nested table ([section]) ---
+[address]
+street  = "123 Main St"
+city    = "Tallinn"
+country = "Estonia"
+zip     = "10111"
+
+# --- Array of tables ([[section]]) - TOML equivalent of a YAML list of mappings ---
+[[products]]
+name     = "Widget A"
+price    = 9.99
+in_stock = true
+
+[[products]]
+name     = "Widget B"
+price    = 19.99
+in_stock = false

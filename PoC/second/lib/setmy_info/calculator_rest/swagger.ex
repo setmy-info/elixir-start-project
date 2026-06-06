@@ -81,7 +81,7 @@ defmodule SetmyInfo.CalculatorRest.Swagger do
             type: "object",
             required: ["result"],
             properties: %{
-              result: %{type: "integer", format: "int32"}
+              result: %{type: "integer", format: "int64"}
             }
           },
           ErrorResponse: %{

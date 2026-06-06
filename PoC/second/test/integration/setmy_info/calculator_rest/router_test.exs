@@ -1,9 +1,12 @@
 defmodule SetmyInfo.CalculatorRest.RouterTest do
   use ExUnit.Case, async: true
+
+  @moduletag :integration
+
   import Plug.Conn
   import Plug.Test
 
-  alias SetmyInfo.CalculatorRest.Router
+  alias SetmyInfo.CalculatorRest.{RateLimiter, Router}
 
   @web_app_dir Path.join(:code.priv_dir(:calculator_app), "static")
 
@@ -67,6 +70,20 @@ defmodule SetmyInfo.CalculatorRest.RouterTest do
 
     assert Jason.decode!(conn.resp_body) == %{
              "error" => "Request body must contain integer fields 'a' and 'b'."
+           }
+  end
+
+  test "POST /api/add returns 400 when a value exceeds int32 range" do
+    conn =
+      conn(:post, "/api/add", Jason.encode!(%{a: 2_147_483_648, b: 0}))
+      |> put_req_header("content-type", "application/json")
+      |> put_req_header("accept", "application/json")
+      |> Router.call([])
+
+    assert conn.status == 400
+
+    assert Jason.decode!(conn.resp_body) == %{
+             "error" => "Fields 'a' and 'b' must be 32-bit integers (-2147483648 to 2147483647)."
            }
   end
 
@@ -236,5 +253,202 @@ defmodule SetmyInfo.CalculatorRest.RouterTest do
              String.contains?(header, "image/x-icon") or
                String.contains?(header, "image/vnd.microsoft.icon")
            end)
+  end
+
+  describe "POST /api/calc — Operation behaviour dispatch" do
+    test "add operation returns the sum" do
+      conn =
+        conn(:post, "/api/calc", Jason.encode!(%{op: "add", a: 4, b: 6}))
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("accept", "application/json")
+        |> Router.call([])
+
+      assert conn.status == 200
+      assert Jason.decode!(conn.resp_body) == %{"result" => 10}
+    end
+
+    test "subtract operation returns the difference" do
+      conn =
+        conn(:post, "/api/calc", Jason.encode!(%{op: "subtract", a: 10, b: 3}))
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("accept", "application/json")
+        |> Router.call([])
+
+      assert conn.status == 200
+      assert Jason.decode!(conn.resp_body) == %{"result" => 7}
+    end
+
+    test "divide by zero returns 400" do
+      conn =
+        conn(:post, "/api/calc", Jason.encode!(%{op: "divide", a: 10, b: 0}))
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("accept", "application/json")
+        |> Router.call([])
+
+      assert conn.status == 400
+      assert Jason.decode!(conn.resp_body)["error"] =~ "zero"
+    end
+
+    test "unknown operation returns 400" do
+      conn =
+        conn(:post, "/api/calc", Jason.encode!(%{op: "modulo", a: 10, b: 3}))
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("accept", "application/json")
+        |> Router.call([])
+
+      assert conn.status == 400
+      assert Jason.decode!(conn.resp_body)["error"] =~ "Unknown operation"
+    end
+  end
+
+  describe "POST /api/batch — parallel addition" do
+    test "returns results for each pair in order" do
+      pairs = [%{a: 1, b: 2}, %{a: 3, b: 4}, %{a: 5, b: 6}]
+
+      conn =
+        conn(:post, "/api/batch", Jason.encode!(%{pairs: pairs}))
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("accept", "application/json")
+        |> Router.call([])
+
+      assert conn.status == 200
+      results = Jason.decode!(conn.resp_body)["results"]
+      assert Enum.map(results, & &1["result"]) == [3, 7, 11]
+    end
+
+    test "returns 400 when pairs array is missing" do
+      conn =
+        conn(:post, "/api/batch", Jason.encode!(%{a: 1}))
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("accept", "application/json")
+        |> Router.call([])
+
+      assert conn.status == 400
+    end
+  end
+
+  describe "GET /api/history" do
+    test "returns empty history when History GenServer is not running" do
+      conn =
+        conn(:get, "/api/history")
+        |> Router.call([])
+
+      assert conn.status == 200
+      assert Jason.decode!(conn.resp_body) == %{"history" => []}
+    end
+  end
+
+  @tag :concurrent
+  test "handles concurrent requests without interference" do
+    tasks =
+      for n <- 1..30 do
+        Task.async(fn ->
+          conn(:post, "/api/add", Jason.encode!(%{a: n, b: n}))
+          |> put_req_header("content-type", "application/json")
+          |> put_req_header("accept", "application/json")
+          |> Router.call([])
+        end)
+      end
+
+    results = Task.await_many(tasks, 5_000)
+
+    for {result_conn, n} <- Enum.zip(results, 1..30) do
+      assert result_conn.status == 200
+      assert Jason.decode!(result_conn.resp_body)["result"] == n * 2
+    end
+  end
+
+  describe "CORS headers" do
+    test "all API responses include Access-Control-Allow-Origin header" do
+      conn =
+        conn(:post, "/api/add", Jason.encode!(%{a: 1, b: 2}))
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("accept", "application/json")
+        |> Router.call([])
+
+      assert get_resp_header(conn, "access-control-allow-origin") == ["*"]
+      assert get_resp_header(conn, "access-control-allow-methods") != []
+    end
+
+    test "OPTIONS preflight returns 204 with CORS headers" do
+      conn =
+        conn(:options, "/api/add")
+        |> put_req_header("origin", "https://example.com")
+        |> put_req_header("access-control-request-method", "POST")
+        |> Router.call([])
+
+      assert conn.status == 204
+      assert get_resp_header(conn, "access-control-allow-origin") == ["*"]
+      assert get_resp_header(conn, "access-control-allow-methods") != []
+      assert get_resp_header(conn, "access-control-allow-headers") != []
+    end
+
+    test "404 responses also carry CORS headers" do
+      conn =
+        conn(:get, "/api/no-such-path")
+        |> Router.call([])
+
+      assert conn.status == 404
+      assert get_resp_header(conn, "access-control-allow-origin") == ["*"]
+    end
+  end
+
+  describe "rate limiter" do
+    setup do
+      # Start a fresh rate limiter for isolation; stop it on exit.
+      case RateLimiter.start_link([]) do
+        {:ok, pid} -> on_exit(fn -> Process.exit(pid, :kill) end)
+        {:error, {:already_started, _}} -> :ok
+      end
+
+      :ok
+    end
+
+    test "returns 429 when the per-IP limit is exceeded" do
+      test_ip = "10.99.0.1"
+      window = div(System.system_time(:second), 60)
+      limit = Application.get_env(:calculator_app, :rate_limit_max_requests, 100)
+
+      # Seed the ETS table with count at the limit
+      :ets.insert(:rate_limiter, {{test_ip, window}, limit})
+
+      conn =
+        conn(:post, "/api/add", Jason.encode!(%{a: 1, b: 2}))
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("accept", "application/json")
+        |> Map.put(:remote_ip, {10, 99, 0, 1})
+        |> Router.call([])
+
+      assert conn.status == 429
+      assert get_resp_header(conn, "retry-after") == ["60"]
+      assert Jason.decode!(conn.resp_body)["error"] =~ "Rate limit exceeded"
+    end
+
+    test "requests below the limit are allowed" do
+      conn =
+        conn(:post, "/api/add", Jason.encode!(%{a: 3, b: 4}))
+        |> put_req_header("content-type", "application/json")
+        |> put_req_header("accept", "application/json")
+        |> Router.call([])
+
+      assert conn.status == 200
+    end
+
+    test "rate limit does not apply to static files" do
+      test_ip = "10.99.0.2"
+      window = div(System.system_time(:second), 60)
+      limit = Application.get_env(:calculator_app, :rate_limit_max_requests, 100)
+
+      # Seed beyond the limit
+      :ets.insert(:rate_limiter, {{test_ip, window}, limit + 50})
+
+      # Static file path is exempt
+      conn =
+        conn(:get, "/")
+        |> Map.put(:remote_ip, {10, 99, 0, 2})
+        |> Router.call([])
+
+      refute conn.status == 429
+    end
   end
 end

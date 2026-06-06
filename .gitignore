@@ -34,3 +34,6 @@
 Thumbs.db
 
 claude.session.sh
+
+**/calculator_app_local.db
+**/calculator_app_local.db*

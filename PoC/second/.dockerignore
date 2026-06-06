@@ -1,0 +1,17 @@
+_build
+deps
+docs
+log
+.git
+.gitignore
+.idea
+.junie
+*.db
+*.db-shm
+*.db-wal
+test
+features
+scripts
+coveralls.json
+CHANGELOG.md
+LICENSE

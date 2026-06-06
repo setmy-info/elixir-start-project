@@ -2,7 +2,7 @@ import Config
 
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  metadata: [:duration_ms, :method, :path, :request_id, :status]
 
 config :calculator_app,
   log_format: "$time $metadata[$level] $message\n",

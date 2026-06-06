@@ -1,6 +1,8 @@
 defmodule SetmyInfo.CalculatorCli.E2ETest do
   use ExUnit.Case
 
+  @moduletag :e2e
+
   import ExUnit.CaptureIO
 
   alias SetmyInfo.CalculatorCli.Main

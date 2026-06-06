@@ -1,7 +1,7 @@
 import Config
 
 log_format = "$time $metadata[$level] $message\n"
-log_metadata = [:request_id]
+log_metadata = [:duration_ms, :method, :path, :request_id, :status]
 log_rotate_max_bytes = 1_048_576
 log_rotate_keep = 5
 

@@ -38,6 +38,7 @@ defmodule Mix.Tasks.Quality do
     run_mix_task!("test", [])
     run_mix_task!("credo.report", [])
     run_mix_task!("deps.audit", [])
+    run_mix_task!("sobelow", ["--config"])
   end
 
   defp run_mix_task!(task, args) do
@@ -56,6 +57,7 @@ defmodule Mix.Tasks.Quality do
   end
 
   defp preferred_env("test"), do: "test"
+  defp preferred_env("muzak"), do: "test"
   defp preferred_env(_task), do: "dev"
 
   defp format_invalid_options(invalid) do
