@@ -1,3 +1,7 @@
 @echo off
-elixir hello.exs
-pause
+setlocal
+
+set SCRIPT_DIR=%~dp0
+elixir %SCRIPT_DIR%hello.exs %*
+exit /b %ERRORLEVEL%
+
