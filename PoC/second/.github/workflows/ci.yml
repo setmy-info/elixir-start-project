@@ -92,3 +92,45 @@ jobs:
 
       - name: Build documentation
         run: mix docs
+
+  # ── 2. Publish to hex.pm ───────────────────────────────────────────────────
+  # Runs only on direct pushes to master (not on PRs) and only after the test
+  # job succeeds.  Requires the HEX_API_KEY repository secret.
+  #
+  # To generate a CI-specific org key:
+  #   mix hex.organization key generate setmy_info --key-name github-ci
+  # Then add the output as a GitHub secret named HEX_API_KEY.
+  publish:
+    name: Publish to hex.pm
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+
+    env:
+      MIX_ENV: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Erlang/OTP and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "29.x"
+          elixir-version: "1.19.x"
+
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: PoC/second/deps
+          key: ${{ runner.os }}-mix-29.x-1.19.x-${{ hashFiles('PoC/second/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-29.x-1.19.x-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Publish package and docs to hex.pm
+        run: mix hex.publish --organization setmy_info --yes
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
